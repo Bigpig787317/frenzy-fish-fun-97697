@@ -28,6 +28,11 @@ interface Coral {
 
 export const FishingGame = () => {
   const [score, setScore] = useState(0);
+  const [baitNo, setBaitNo] = useState(5);
+  // bait
+  // question asker
+  const [showQuestion, setShowQuestion] = useState(false);
+  const [currentAnswer, setCurrentAnswer] = useState("");
   const [hookY, setHookY] = useState(0);
   const [boatX, setBoatX] = useState(50); // Boat position (percentage)
   const [isCasting, setIsCasting] = useState(false);
@@ -185,10 +190,37 @@ export const FishingGame = () => {
   };
 
   const handleCast = () => {
-    if (!isCasting && !isReeling && hookY === 0) {
+    if (!isCasting && !isReeling && hookY === 0 && baitNo > 0) {
       setIsCasting(true);
+      // Bait number minus one every time we fish
+      setBaitNo((prev) => prev - 1);
     }
   };
+  //test question
+  const question = "what is 9+10?";
+  const correctAnswer = "21";
+
+  // coppied from chat didn't have enough time
+  const handleSubmitAnswer = () => {
+    if (currentAnswer === correctAnswer) {
+      setBaitNo(prev => prev + 1); // Reward: add 1 bait
+      alert("Correct!");
+    } else {
+      alert("Try again!");
+    }
+    setCurrentAnswer("");      // Clear the input for next time
+    setShowQuestion(false);    // Hide the question modal
+  };
+// coppied from chat
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+
+  <Button onClick={() => setShowQuestion(true)}>
+    Refill Bait
+  </Button>
+      //setBaitNo(prev => prev + 1)}>
+    //Refill Bait (+1) come back
+  //</Button>
+
 
   const handleReset = () => {
     setScore(0);
@@ -197,6 +229,7 @@ export const FishingGame = () => {
     setIsCasting(false);
     setIsReeling(false);
     setCaughtFish(null);
+
   };
 
   return (
@@ -209,6 +242,23 @@ export const FishingGame = () => {
         <Cloud className="absolute top-32 right-[40%] w-16 h-16 text-white/65 animate-pulse" style={{ animationDuration: "4.5s" }} />
         <Cloud className="absolute top-8 left-[60%] w-20 h-20 text-white/55 animate-pulse" style={{ animationDuration: "5.5s" }} />
       </div>
+      {showQuestion && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-50">
+            <div className="bg-white p-6 rounded shadow-lg flex flex-col gap-4">
+              <p>{question}</p>
+              <input
+                  type="text"
+                  value={currentAnswer}
+                  onChange={(e) => setCurrentAnswer(e.target.value)}
+                  className="border p-1"
+              />
+              <div className="flex gap-2">
+                <Button onClick={handleSubmitAnswer}>Submit</Button>
+                <Button onClick={() => setShowQuestion(false)}>Cancel</Button>
+              </div>
+            </div>
+          </div>
+      )}
       <Card className="p-6 mb-4 bg-white/90 backdrop-blur shadow-lg">
         <div className="flex items-center justify-between gap-8">
           <div className="text-center">
@@ -216,9 +266,13 @@ export const FishingGame = () => {
             <p className="text-3xl font-bold text-primary">{score}</p>
           </div>
           <div className="flex gap-2 flex-wrap">
+            <Button onClick={() => setShowQuestion(true)}>
+              Refill Bait
+              <p className="text-sm text-muted-foreground">Bait left: {baitNo}</p>
+            </Button>
             <Button
-              onClick={handleCast}
-              disabled={isCasting || isReeling}
+                onClick={handleCast}
+                disabled={isCasting || isReeling}
               className="bg-primary hover:bg-primary/90"
             >
               <Anchor className="mr-2 h-4 w-4" />
