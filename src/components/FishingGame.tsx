@@ -7,11 +7,6 @@ import seaweedGrass from "@/assets/seaweed_grass.svg";
 import seaweedGreenC from "@/assets/seaweed_green_c.svg";
 import seaweedPink from "@/assets/seaweed_pink.svg";
 import seaweedOrange from "@/assets/seaweed_orange.svg";
-import fish_Blue from "@/assets/fish_blue_outline.svg";
-import fish_Brown from "@/assets/fish_brown_outline.svg";
-import fish_Green from "@/assets/fish_green_outline.svg";
-import fish_Pink from "@/assets/fish_red_outline.svg";
-import fish_Orange from "@/assets/fish_blue_outline.svg";
 
 interface Fish {
   id: number;
@@ -57,15 +52,12 @@ export const FishingGame = () => {
   };
 
   // Keyboard controls for boat movement
-  // @ts-ignore
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") {
         setBoatX((prev) => Math.max(10, prev - 2));
       } else if (e.key === "ArrowRight") {
         setBoatX((prev) => Math.min(90, prev + 2));
-      } else if (e.key == "ArrowDown") {
-        handleCast();
       }
     };
 
@@ -278,7 +270,32 @@ export const FishingGame = () => {
               Refill Bait
               <p className="text-sm text-muted-foreground">Bait left: {baitNo}</p>
             </Button>
-
+            <Button
+                onClick={handleCast}
+                disabled={isCasting || isReeling}
+              className="bg-primary hover:bg-primary/90"
+            >
+              <Anchor className="mr-2 h-4 w-4" />
+              Cast Line
+            </Button>
+            <div className="flex gap-1">
+              <Button
+                onClick={() => setBoatX((prev) => Math.max(10, prev - 5))}
+                variant="outline"
+                size="icon"
+                disabled={isCasting || isReeling}
+              >
+                ←
+              </Button>
+              <Button
+                onClick={() => setBoatX((prev) => Math.min(90, prev + 5))}
+                variant="outline"
+                size="icon"
+                disabled={isCasting || isReeling}
+              >
+                →
+              </Button>
+            </div>
             <Button onClick={handleReset} variant="outline">
               Reset
             </Button>
@@ -334,22 +351,17 @@ export const FishingGame = () => {
 
           {/* Caught Fish */}
           {caughtFish && isReeling && (
-              <div
-                  className="absolute -translate-x-1/2 -translate-y-1/2 z-10 transition-all duration-200"
-                  style={{
-                    left: `${boatX}%`,
-                    top: `${hookY}%`,
-                    color: caughtFish.color,
-                    fontSize: `${caughtFish.isShark ? fishSizes.shark.width : fishSizes[caughtFish.size].width}px`,
-                  }}
-              >
-                <img src={fish_Blue} className="animate-bounce"/>
-                <img src={fish_Brown} className="animate-bounce"/>
-                <img src={fish_Pink} className="animate-bounce"/>
-                <img src={fish_Green} className="animate-bounce"/>
-                <img src={fish_Orange} className="animate-bounce"/>
-              </div>
-
+            <div
+              className="absolute -translate-x-1/2 -translate-y-1/2 z-10 transition-all duration-200"
+              style={{
+                left: `${boatX}%`,
+                top: `${hookY}%`,
+                color: caughtFish.color,
+                fontSize: `${caughtFish.isShark ? fishSizes.shark.width : fishSizes[caughtFish.size].width}px`,
+              }}
+            >
+              <FishIcon className="animate-bounce" />
+            </div>
           )}
 
           {/* Fish and Sharks */}
@@ -357,31 +369,31 @@ export const FishingGame = () => {
             if (caughtFish?.id === f.id) return null;
             const size = f.isShark ? fishSizes.shark.width : fishSizes[f.size].width;
             return (
-                <div
-                    key={f.id}
-                    className="absolute transition-all duration-100"
-                    style={{
-                      left: `${f.x}%`,
-                      top: `${f.y}%`,
-                      color: f.color,
-                      transform: `scaleX(${f.direction})`,
-                      fontSize: `${size}px`,
-                    }}
-                >
-                  <FishIcon className={f.isShark ? "stroke-2" : ""}/>
-                </div>
+              <div
+                key={f.id}
+                className="absolute transition-all duration-100"
+                style={{
+                  left: `${f.x}%`,
+                  top: `${f.y}%`,
+                  color: f.color,
+                  transform: `scaleX(${f.direction})`,
+                  fontSize: `${size}px`,
+                }}
+              >
+                <FishIcon className={f.isShark ? "stroke-2" : ""} />
+              </div>
             );
           })}
 
           {/* Seaweed */}
           {coral.map((c) => (
-              <div
-                  key={c.id}
-                  className="absolute bottom-0 transition-all duration-100"
-                  style={{
-                    left: `${c.x}%`,
-                    height: `${c.height}px`,
-                    width: "64px",
+            <div
+              key={c.id}
+              className="absolute bottom-0 transition-all duration-100"
+              style={{
+                left: `${c.x}%`,
+                height: `${c.height}px`,
+                width: "64px",
               }}
             >
               <img 
