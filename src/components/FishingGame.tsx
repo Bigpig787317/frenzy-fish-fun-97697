@@ -192,7 +192,6 @@ export const FishingGame = () => {
   };
 
   const handleCast = () => {
-    if (!isCasting && !isReeling && hookY === 0) {
     if (!isCasting && !isReeling && hookY === 0 && baitNo > 0) {
       setIsCasting(true);
       // Bait number minus one every time we fish
