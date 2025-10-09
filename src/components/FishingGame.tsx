@@ -40,7 +40,7 @@ export const FishingGame = () => {
 
   const fishColors = ["hsl(var(--fish-orange))", "hsl(var(--fish-yellow))", "hsl(var(--coral))"];
   const fishSizes = {
-    small: { width: 30, height: 20, points: 10 },
+    small: { width: 35, height: 20, points: 10 },
     medium: { width: 50, height: 35, points: 25 },
     large: { width: 70, height: 50, points: 50 },
     shark: { width: 80, height: 60, points: 100 },
@@ -53,6 +53,8 @@ export const FishingGame = () => {
         setBoatX((prev) => Math.max(10, prev - 2));
       } else if (e.key === "ArrowRight") {
         setBoatX((prev) => Math.min(90, prev + 2));
+      } else if (e.key == "ArrowDown") {
+        handleCast();
       }
     };
 
@@ -216,32 +218,7 @@ export const FishingGame = () => {
             <p className="text-3xl font-bold text-primary">{score}</p>
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Button
-              onClick={handleCast}
-              disabled={isCasting || isReeling}
-              className="bg-primary hover:bg-primary/90"
-            >
-              <Anchor className="mr-2 h-4 w-4" />
-              Cast Line
-            </Button>
-            <div className="flex gap-1">
-              <Button
-                onClick={() => setBoatX((prev) => Math.max(10, prev - 5))}
-                variant="outline"
-                size="icon"
-                disabled={isCasting || isReeling}
-              >
-                ←
-              </Button>
-              <Button
-                onClick={() => setBoatX((prev) => Math.min(90, prev + 5))}
-                variant="outline"
-                size="icon"
-                disabled={isCasting || isReeling}
-              >
-                →
-              </Button>
-            </div>
+    
             <Button onClick={handleReset} variant="outline">
               Reset
             </Button>
