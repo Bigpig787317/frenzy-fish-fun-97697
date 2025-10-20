@@ -268,40 +268,6 @@ export const FishingGame = () => {
             <p className="text-3xl font-bold text-primary">{score}</p>
           </div>
           <div className="flex gap-2 flex-wrap">
-<<<<<<< HEAD
-    
-=======
-            <Button onClick={() => setShowQuestion(true)}>
-              Refill Bait
-              <p className="text-sm text-muted-foreground">Bait left: {baitNo}</p>
-            </Button>
-            <Button
-                onClick={handleCast}
-                disabled={isCasting || isReeling}
-              className="bg-primary hover:bg-primary/90"
-            >
-              <Anchor className="mr-2 h-4 w-4" />
-              Cast Line
-            </Button>
-            <div className="flex gap-1">
-              <Button
-                onClick={() => setBoatX((prev) => Math.max(10, prev - 5))}
-                variant="outline"
-                size="icon"
-                disabled={isCasting || isReeling}
-              >
-                ←
-              </Button>
-              <Button
-                onClick={() => setBoatX((prev) => Math.min(90, prev + 5))}
-                variant="outline"
-                size="icon"
-                disabled={isCasting || isReeling}
-              >
-                →
-              </Button>
-            </div>
->>>>>>> 8941efa6548bd55be14b77c97bdeb80318c1ebe1
             <Button onClick={handleReset} variant="outline">
               Reset
             </Button>
