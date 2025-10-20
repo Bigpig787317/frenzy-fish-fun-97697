@@ -176,7 +176,7 @@ export const FishingGame = () => {
     if (caughtFish) return;
 
     const hookX = boatX; // Hook follows boat position
-    const catchRadius = 5;
+    const catchRadius = 3;
 
     for (const f of fish) {
       const distance = Math.sqrt(Math.pow(hookX - f.x, 2) + Math.pow(currentHookY - f.y, 2));
@@ -203,7 +203,7 @@ export const FishingGame = () => {
   // coppied from chat didn't have enough time
   const handleSubmitAnswer = () => {
     if (currentAnswer === correctAnswer) {
-      setBaitNo(prev => prev + 1); // Reward: add 1 bait
+      setBaitNo(prev => prev + 2); // Reward: add 1 bait
       alert("Correct!");
     } else {
       alert("Try again!");
