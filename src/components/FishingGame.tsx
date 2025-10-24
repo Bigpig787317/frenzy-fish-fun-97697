@@ -1,3 +1,4 @@
+// imports
 import { ref, onValue, set, get } from "firebase/database";
 import { database } from "../firebase"; // import the database reference
 import { useState, useEffect, useRef } from "react";
@@ -8,7 +9,9 @@ import seaweedGreenA from "@/assets/seaweed_green_a.svg";
 import seaweedGrass from "@/assets/seaweed_grass.svg";
 import seaweedGreenC from "@/assets/seaweed_green_c.svg";
 import seaweedPink from "@/assets/seaweed_pink.svg";
-import seaweedOrange from "@/assets/seaweed_orange.svg";
+import seaweedOrange from "@/assets/seaweed_orange.svg";type Difficulty = "mild" | "medium" | "spicy";
+
+type Screen = "splash" | "levels" | "game";
 
 interface Fish {
   id: number;
@@ -27,43 +30,32 @@ interface Coral {
   height: number;
   seaweedType: string;
 }
+interface FishingGameProps {
+  difficulty?: "mild" | "medium" | "spicy"; // make it optional
+}
 
-export const FishingGame = () => {
+export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild" }) => {
   const [score, setScore] = useState(0);
   const [baitNo, setBaitNo] = useState(5);
-  // bait
-  // question asker
   const [showQuestion, setShowQuestion] = useState(false);
   const [currentAnswer, setCurrentAnswer] = useState("");
   const [hookY, setHookY] = useState(0);
-  const [boatX, setBoatX] = useState(50); // Boat position (percentage)
+  const [boatX, setBoatX] = useState(50);
   const [isCasting, setIsCasting] = useState(false);
   const [isReeling, setIsReeling] = useState(false);
   const [fish, setFish] = useState<Fish[]>([]);
   const [coral, setCoral] = useState<Coral[]>([]);
+  const seaweedTypes = [seaweedGreenA, seaweedGrass, seaweedGreenC, seaweedPink, seaweedOrange];
   const [caughtFish, setCaughtFish] = useState<Fish | null>(null);
   const gameAreaRef = useRef<HTMLDivElement>(null);
   const hookSpeed = 3;
-  const [joinCode, setJoinCode] = useState("");       // stores what the player types
-  const [showJoinPopup, setShowJoinPopup] = useState(true); // show popup at start**
-  const [showJoinInput, setShowJoinInput] = useState(false);
-  const [isHosting, setIsHosting] = useState(false);
   const [communalScore, setCommunalScore] = useState(0);
-  const [hostCode, setHostCode] = useState(""); // stores the generated host code
   const fishColors = ["hsl(var(--fish-orange))", "hsl(var(--fish-yellow))", "hsl(var(--coral))"];
   const fishSizes = {
     small: { width: 30, height: 20, points: 10 },
     medium: { width: 50, height: 35, points: 25 },
     large: { width: 70, height: 50, points: 50 },
     shark: { width: 80, height: 60, points: 100 },
-  };
-  const generateJoinCode = () => {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let code = "";
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return code;
   };
   
   useEffect(() => {
@@ -76,6 +68,7 @@ export const FishingGame = () => {
   
     return () => unsubscribe(); // stop listening when component unmounts
   }, []);
+  
   // Keyboard controls for boat movement
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -89,9 +82,6 @@ export const FishingGame = () => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
-
-  // Initialize seaweed
-  const seaweedTypes = [seaweedGreenA, seaweedGrass, seaweedGreenC, seaweedPink, seaweedOrange];
   
   useEffect(() => {
     const initialCoral: Coral[] = Array.from({ length: 12 }, (_, i) => ({
@@ -230,9 +220,9 @@ export const FishingGame = () => {
   };
   //test question
   const question = "what is 9+10?";
-  const correctAnswer = "21";
+  const correctAnswer = "19";
 
-  // coppied from chat didn't have enough time
+  // when you type in a question answer
   const handleSubmitAnswer = () => {
     if (currentAnswer === correctAnswer) {
       setBaitNo(prev => prev + 1); // Reward: add 1 bait
@@ -243,16 +233,11 @@ export const FishingGame = () => {
     setCurrentAnswer("");      // Clear the input for next time
     setShowQuestion(false);    // Hide the question modal
   };
-// coppied from chat
-  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 
+  // refill bait button
   <Button onClick={() => setShowQuestion(true)}>
     Refill Bait
   </Button>
-      //setBaitNo(prev => prev + 1)}>
-    //Refill Bait (+1) come back
-  //</Button>
-
 
   const handleReset = () => {
     setScore(0);
@@ -263,82 +248,9 @@ export const FishingGame = () => {
     setCaughtFish(null);
 
   };
-  // THIS IS ALL WHAT'S VISIBLE ON THE SCREEN:
+  // visuals
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-400 via-sky-300 to-sky-200 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      
-      {/* POP-UP AT THE START */}
-      {showJoinPopup && (
-  <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-50">
-    <div className="bg-blue-500 w-[85%] h-[85%] rounded-lg shadow-lg flex flex-col items-center justify-start p-8 gap-12">
-      <p className="text-white font-extrabold text-6xl mb-12">Math Catch</p>
-      
-      {/* Display host code if it exists */}
-      {hostCode && (
-        <>
-          <div className="text-white text-2xl font-bold">
-            Host Code: {hostCode}
-          </div>
-          <Button
-            className="text-2xl py-6 mt-4"
-            onClick={() => setShowJoinPopup(false)} // start the game
-          >
-            Start Game
-          </Button>
-        </>
-      )}
-
-      {/* Join Code Input */}
-      {showJoinInput ? (
-        <div className="flex flex-col gap-6 w-3/4 items-center">
-          <div className="flex gap-4 w-full items-center">
-            <label className="text-white text-xl font-semibold">Join Code:</label>
-            <input
-              type="text"
-              value={joinCode}
-              onChange={(e) => setJoinCode(e.target.value)}
-              className="flex-1 p-3 text-xl rounded"
-              placeholder="Enter code"
-            />
-          </div>
-          <Button
-            className="text-2xl py-6 w-full"
-            onClick={() => {
-              if (!joinCode) {
-                alert("Please enter a code!");
-                return;
-              }
-              setShowJoinPopup(false); // hide popup and start game
-            }}
-          >
-            Submit
-          </Button>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-8 w-3/4">
-          {/* Host Game Button */}
-          <Button
-            className="text-2xl py-6"
-            onClick={() => {
-              const code = generateJoinCode();     // generate code
-              setHostCode(code);                    // save code in state
-              setIsHosting(true);      // mark that the player is now hosting
-              const gameRef = ref(database, `games/${code}`);
-              set(gameRef, { communalScore: 0 });  // create Firebase node
-            }}
-          >
-            Host Game
-          </Button>
-
-
-          <Button className="text-2xl py-6" onClick={() => setShowJoinInput(true)}>
-            Join Game
-          </Button>
-        </div>
-      )}
-    </div>
-  </div>
-)}
       
       {/* Sky Background with Clouds */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -523,3 +435,4 @@ export const FishingGame = () => {
     </div>
   );
 };
+export default FishingGame;
