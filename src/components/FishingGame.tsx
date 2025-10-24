@@ -10,6 +10,23 @@ import seaweedOrange from "@/assets/seaweed_orange.svg";
 
 type Difficulty = "mild" | "medium" | "spicy";
 
+const QUESTIONS: Record<Difficulty, { prompt: string; answer: string }> = {
+  mild: {
+    prompt: "What is 8 + 5?",
+    answer: "13",
+  },
+  medium: {
+    // Keep at a 4th-grade level
+    prompt: "What is 36 ÷ 4?",
+    answer: "9",
+  },
+  spicy: {
+    // Slightly harder
+    prompt: "What is the area of a rectangle that is 9 units by 7 units?",
+    answer: "63",
+  },
+};
+
 interface Props {
   difficulty?: Difficulty;
 }
@@ -226,9 +243,9 @@ export default function FishingGame({ difficulty = "mild" }: Props) {
     }
   };
 
-  // Simple test question (short answer)
-  const question = "What is 9 + 10?";
-  const correctAnswer = "21";
+
+  // Pick question based on chosen difficulty
+const { prompt: question, answer: correctAnswer } = QUESTIONS[difficulty];
 
   const handleSubmitAnswer = () => {
     if (currentAnswer.trim() === correctAnswer) {
