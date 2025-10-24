@@ -288,7 +288,7 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild" })
           <div className="flex gap-2 flex-wrap">
             <Button onClick={() => setShowQuestion(true)}>
               Refill Bait
-              <p className="text-sm text-muted-foreground">Bait left: {baitNo}</p>
+              <p className="text-sm text-muted-foreground">Bait: {baitNo}</p>
             </Button>
             <Button
                 onClick={handleCast}
@@ -430,7 +430,8 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild" })
       </Card>
 
       <p className="mt-4 text-sm text-muted-foreground text-center max-w-md">
-        Use arrow keys or buttons to move the boat! Cast your line to catch fish (10-50 pts) and sharks (100 pts)!
+        Use your arrow keys or buttons to move the boat! 
+        Cast your line to catch fish and earn points!
       </p>
     </div>
   );

@@ -43,7 +43,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStart }) => {
   // visuals
   return (
     <div className="w-screen h-screen flex flex-col items-center justify-center bg-blue-500 gap-6">
-      <h1 className="text-white text-6xl font-bold mb-12">Math Catch</h1>
+      <h1 className="text-white text-9xl font-bold mb-12">Math Catch</h1>
 
       {showJoinInput ? (
         <>
@@ -59,13 +59,21 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStart }) => {
             </Button>
         </>
       ) : (
-        <div className="flex gap-4">
-          <Button onClick={handleHost}>
+        // host and join buttons
+        <div className="flex gap-10">
+          
+          <Button 
+          className="px-20 py-10 bg-yellow-400 text-white text-3xl rounded-xl hover:bg-yellow-600"
+          onClick={handleHost}>
             Host Game
             </Button>
-          <Button onClick={() => setShowJoinInput(true)}>
+          
+          <Button 
+          className="px-20 py-10 bg-green-400 text-white text-3xl rounded-xl hover:bg-green-600"
+          onClick={() => setShowJoinInput(true)}>
             Join Game
             </Button>
+        
         </div>
       )}
     </div>
