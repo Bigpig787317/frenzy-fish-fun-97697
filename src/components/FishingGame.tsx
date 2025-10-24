@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Fish as FishIcon, Anchor, Cloud } from "lucide-react";
@@ -7,6 +7,12 @@ import seaweedGrass from "@/assets/seaweed_grass.svg";
 import seaweedGreenC from "@/assets/seaweed_green_c.svg";
 import seaweedPink from "@/assets/seaweed_pink.svg";
 import seaweedOrange from "@/assets/seaweed_orange.svg";
+
+type Difficulty = "mild" | "medium" | "spicy";
+
+interface Props {
+  difficulty?: Difficulty;
+}
 
 interface Fish {
   id: number;
@@ -26,13 +32,15 @@ interface Coral {
   seaweedType: string;
 }
 
-export const FishingGame = () => {
+export default function FishingGame({ difficulty = "mild" }: Props) {
   const [score, setScore] = useState(0);
   const [baitNo, setBaitNo] = useState(5);
-  // bait
-  // question asker
+
+  // Short-answer modal
   const [showQuestion, setShowQuestion] = useState(false);
   const [currentAnswer, setCurrentAnswer] = useState("");
+
+  // Hook/boat/game state
   const [hookY, setHookY] = useState(0);
   const [boatX, setBoatX] = useState(50); // Boat position (percentage)
   const [isCasting, setIsCasting] = useState(false);
@@ -40,6 +48,7 @@ export const FishingGame = () => {
   const [fish, setFish] = useState<Fish[]>([]);
   const [coral, setCoral] = useState<Coral[]>([]);
   const [caughtFish, setCaughtFish] = useState<Fish | null>(null);
+
   const gameAreaRef = useRef<HTMLDivElement>(null);
   const hookSpeed = 3;
 
@@ -50,6 +59,12 @@ export const FishingGame = () => {
     large: { width: 70, height: 50, points: 50 },
     shark: { width: 80, height: 60, points: 100 },
   };
+
+  // Optional: observe chosen difficulty
+  useEffect(() => {
+    // You can adjust speeds/spawns based on difficulty here if you want
+    // console.log("Starting game at difficulty:", difficulty);
+  }, [difficulty]);
 
   // Keyboard controls for boat movement
   useEffect(() => {
@@ -67,11 +82,10 @@ export const FishingGame = () => {
 
   // Initialize seaweed
   const seaweedTypes = [seaweedGreenA, seaweedGrass, seaweedGreenC, seaweedPink, seaweedOrange];
-  
   useEffect(() => {
     const initialCoral: Coral[] = Array.from({ length: 12 }, (_, i) => ({
       id: i,
-      x: (i * 8) + Math.random() * 5,
+      x: i * 8 + Math.random() * 5,
       height: 40 + Math.random() * 30,
       seaweedType: seaweedTypes[Math.floor(Math.random() * seaweedTypes.length)],
     }));
@@ -86,7 +100,13 @@ export const FishingGame = () => {
         id: i,
         x: Math.random() * 100,
         y: 20 + Math.random() * 70,
-        size: isShark ? "large" : Math.random() > 0.6 ? "large" : Math.random() > 0.4 ? "medium" : "small",
+        size: isShark
+          ? "large"
+          : Math.random() > 0.6
+          ? "large"
+          : Math.random() > 0.4
+          ? "medium"
+          : "small",
         speed: isShark ? 0.2 + Math.random() * 0.2 : 0.1 + Math.random() * 0.3,
         direction: Math.random() > 0.5 ? 1 : -1,
         color: isShark ? "hsl(200, 10%, 30%)" : fishColors[Math.floor(Math.random() * fishColors.length)],
@@ -120,7 +140,7 @@ export const FishingGame = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Handle casting and reeling
+  // Casting/reeling animation loop
   useEffect(() => {
     if (!isCasting && !isReeling) return;
 
@@ -143,21 +163,28 @@ export const FishingGame = () => {
             if (caughtFish) {
               const points = caughtFish.isShark ? fishSizes.shark.points : fishSizes[caughtFish.size].points;
               setScore((s) => s + points);
-              // Remove caught fish and add new one
+
+              // Remove caught fish and add a new one
               setFish((prevFish) => {
-                const newFish = prevFish.filter((f) => f.id !== caughtFish.id);
+                const newFishList = prevFish.filter((f) => f.id !== caughtFish.id);
                 const isNewShark = Math.random() > 0.8; // 20% chance for shark
                 const newFishItem: Fish = {
                   id: Date.now(),
                   x: Math.random() * 100,
                   y: 20 + Math.random() * 70,
-                  size: isNewShark ? "large" : Math.random() > 0.6 ? "large" : Math.random() > 0.4 ? "medium" : "small",
+                  size: isNewShark
+                    ? "large"
+                    : Math.random() > 0.6
+                    ? "large"
+                    : Math.random() > 0.4
+                    ? "medium"
+                    : "small",
                   speed: isNewShark ? 0.2 + Math.random() * 0.2 : 0.1 + Math.random() * 0.3,
                   direction: Math.random() > 0.5 ? 1 : -1,
                   color: isNewShark ? "hsl(200, 10%, 30%)" : fishColors[Math.floor(Math.random() * fishColors.length)],
                   isShark: isNewShark,
                 };
-                return [...newFish, newFishItem];
+                return [...newFishList, newFishItem];
               });
               setCaughtFish(null);
             }
@@ -172,6 +199,7 @@ export const FishingGame = () => {
     return () => clearInterval(interval);
   }, [isCasting, isReeling, caughtFish]);
 
+  // Collision check
   const checkFishCollision = (currentHookY: number) => {
     if (caughtFish) return;
 
@@ -189,38 +217,29 @@ export const FishingGame = () => {
     }
   };
 
+  // Cast action
   const handleCast = () => {
     if (!isCasting && !isReeling && hookY === 0 && baitNo > 0) {
       setIsCasting(true);
-      // Bait number minus one every time we fish
+      // Use 1 bait each cast
       setBaitNo((prev) => prev - 1);
     }
   };
-  //test question
-  const question = "what is 9+10?";
+
+  // Simple test question (short answer)
+  const question = "What is 9 + 10?";
   const correctAnswer = "21";
 
-  // coppied from chat didn't have enough time
   const handleSubmitAnswer = () => {
-    if (currentAnswer === correctAnswer) {
-      setBaitNo(prev => prev + 2); // Reward: add 1 bait
+    if (currentAnswer.trim() === correctAnswer) {
+      setBaitNo((prev) => prev + 2); // Reward: add 2 bait
       alert("Correct!");
     } else {
       alert("Try again!");
     }
-    setCurrentAnswer("");      // Clear the input for next time
-    setShowQuestion(false);    // Hide the question modal
+    setCurrentAnswer("");
+    setShowQuestion(false);
   };
-// coppied from chat
-  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-
-  <Button onClick={() => setShowQuestion(true)}>
-    Refill Bait
-  </Button>
-      //setBaitNo(prev => prev + 1)}>
-    //Refill Bait (+1) come back
-  //</Button>
-
 
   const handleReset = () => {
     setScore(0);
@@ -229,7 +248,6 @@ export const FishingGame = () => {
     setIsCasting(false);
     setIsReeling(false);
     setCaughtFish(null);
-
   };
 
   return (
@@ -242,48 +260,56 @@ export const FishingGame = () => {
         <Cloud className="absolute top-32 right-[40%] w-16 h-16 text-white/65 animate-pulse" style={{ animationDuration: "4.5s" }} />
         <Cloud className="absolute top-8 left-[60%] w-20 h-20 text-white/55 animate-pulse" style={{ animationDuration: "5.5s" }} />
       </div>
+
+      {/* Short-answer modal */}
       {showQuestion && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-50">
-            <div className="bg-white p-6 rounded shadow-lg flex flex-col gap-4">
-              <p>{question}</p>
-              <input
-                  type="text"
-                  value={currentAnswer}
-                  onChange={(e) => setCurrentAnswer(e.target.value)}
-                  className="border p-1"
-              />
-              <div className="flex gap-2">
-                <Button onClick={handleSubmitAnswer}>Submit</Button>
-                <Button onClick={() => setShowQuestion(false)}>Cancel</Button>
-              </div>
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-50">
+          <div className="bg-white p-6 rounded shadow-lg flex flex-col gap-4 text-black">
+            <p>{question}</p>
+            <input
+              type="text"
+              value={currentAnswer}
+              onChange={(e) => setCurrentAnswer(e.target.value)}
+              className="border p-2 rounded"
+              placeholder="Type your answer"
+            />
+            <div className="flex gap-2">
+              <Button onClick={handleSubmitAnswer}>Submit</Button>
+              <Button variant="outline" onClick={() => setShowQuestion(false)}>Cancel</Button>
             </div>
           </div>
+        </div>
       )}
+
+      {/* Top bar */}
       <Card className="p-6 mb-4 bg-white/90 backdrop-blur shadow-lg">
         <div className="flex items-center justify-between gap-8">
           <div className="text-center">
             <p className="text-sm font-medium text-muted-foreground">Score</p>
             <p className="text-3xl font-bold text-primary">{score}</p>
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
             <Button onClick={() => setShowQuestion(true)}>
               Refill Bait
-              <p className="text-sm text-muted-foreground">Bait left: {baitNo}</p>
             </Button>
+            <span className="text-sm text-muted-foreground">Bait left: {baitNo}</span>
+
             <Button
-                onClick={handleCast}
-                disabled={isCasting || isReeling}
+              onClick={handleCast}
+              disabled={isCasting || isReeling || baitNo <= 0}
               className="bg-primary hover:bg-primary/90"
             >
               <Anchor className="mr-2 h-4 w-4" />
               Cast Line
             </Button>
+
             <div className="flex gap-1">
               <Button
                 onClick={() => setBoatX((prev) => Math.max(10, prev - 5))}
                 variant="outline"
                 size="icon"
                 disabled={isCasting || isReeling}
+                aria-label="Move left"
               >
                 ←
               </Button>
@@ -292,10 +318,12 @@ export const FishingGame = () => {
                 variant="outline"
                 size="icon"
                 disabled={isCasting || isReeling}
+                aria-label="Move right"
               >
                 →
               </Button>
             </div>
+
             <Button onClick={handleReset} variant="outline">
               Reset
             </Button>
@@ -303,19 +331,18 @@ export const FishingGame = () => {
         </div>
       </Card>
 
+      {/* Game area */}
       <Card className="relative w-full max-w-3xl h-[600px] overflow-hidden shadow-2xl">
         <div
           ref={gameAreaRef}
           className="w-full h-full relative"
-          style={{
-            background: "var(--gradient-ocean)",
-          }}
+          style={{ background: "var(--gradient-ocean)" }}
         >
           {/* Water surface effect */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-white/30" />
 
           {/* Boat */}
-          <div 
+          <div
             className="absolute top-0 -translate-x-1/2 -translate-y-2 z-20 transition-all duration-200"
             style={{ left: `${boatX}%` }}
           >
@@ -328,11 +355,7 @@ export const FishingGame = () => {
           {(isCasting || isReeling || hookY > 0) && (
             <div
               className="absolute -translate-x-1/2 w-0.5 bg-gray-700 z-10 transition-all duration-200"
-              style={{
-                left: `${boatX}%`,
-                top: "0",
-                height: `${hookY}%`,
-              }}
+              style={{ left: `${boatX}%`, top: 0, height: `${hookY}%` }}
             />
           )}
 
@@ -340,16 +363,13 @@ export const FishingGame = () => {
           {(isCasting || isReeling || hookY > 0) && (
             <div
               className="absolute -translate-x-1/2 -translate-y-1/2 z-10 transition-all duration-200"
-              style={{
-                left: `${boatX}%`,
-                top: `${hookY}%`,
-              }}
+              style={{ left: `${boatX}%`, top: `${hookY}%` }}
             >
               <Anchor className="h-6 w-6 text-gray-700" />
             </div>
           )}
 
-          {/* Caught Fish */}
+          {/* Caught Fish (attached to hook when reeling) */}
           {caughtFish && isReeling && (
             <div
               className="absolute -translate-x-1/2 -translate-y-1/2 z-10 transition-all duration-200"
@@ -357,14 +377,16 @@ export const FishingGame = () => {
                 left: `${boatX}%`,
                 top: `${hookY}%`,
                 color: caughtFish.color,
-                fontSize: `${caughtFish.isShark ? fishSizes.shark.width : fishSizes[caughtFish.size].width}px`,
+                fontSize: `${
+                  caughtFish.isShark ? fishSizes.shark.width : fishSizes[caughtFish.size].width
+                }px`,
               }}
             >
               <FishIcon className="animate-bounce" />
             </div>
           )}
 
-          {/* Fish and Sharks */}
+          {/* Swimming Fish */}
           {fish.map((f) => {
             if (caughtFish?.id === f.id) return null;
             const size = f.isShark ? fishSizes.shark.width : fishSizes[f.size].width;
@@ -390,17 +412,9 @@ export const FishingGame = () => {
             <div
               key={c.id}
               className="absolute bottom-0 transition-all duration-100"
-              style={{
-                left: `${c.x}%`,
-                height: `${c.height}px`,
-                width: "64px",
-              }}
+              style={{ left: `${c.x}%`, height: `${c.height}px`, width: "64px" }}
             >
-              <img 
-                src={c.seaweedType} 
-                alt="seaweed" 
-                className="w-full h-full object-contain object-bottom"
-              />
+              <img src={c.seaweedType} alt="seaweed" className="w-full h-full object-contain object-bottom" />
             </div>
           ))}
 
@@ -414,4 +428,4 @@ export const FishingGame = () => {
       </p>
     </div>
   );
-};
+}
