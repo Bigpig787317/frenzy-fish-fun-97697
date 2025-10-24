@@ -1,3 +1,5 @@
+import { ref, onValue, set, get } from "firebase/database";
+import { database } from "../firebase"; // import the database reference
 import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
@@ -42,7 +44,12 @@ export const FishingGame = () => {
   const [caughtFish, setCaughtFish] = useState<Fish | null>(null);
   const gameAreaRef = useRef<HTMLDivElement>(null);
   const hookSpeed = 3;
-
+  const [joinCode, setJoinCode] = useState("");       // stores what the player types
+  const [showJoinPopup, setShowJoinPopup] = useState(true); // show popup at start**
+  const [showJoinInput, setShowJoinInput] = useState(false);
+  const [isHosting, setIsHosting] = useState(false);
+  const [communalScore, setCommunalScore] = useState(0);
+  const [hostCode, setHostCode] = useState(""); // stores the generated host code
   const fishColors = ["hsl(var(--fish-orange))", "hsl(var(--fish-yellow))", "hsl(var(--coral))"];
   const fishSizes = {
     small: { width: 30, height: 20, points: 10 },
@@ -50,7 +57,25 @@ export const FishingGame = () => {
     large: { width: 70, height: 50, points: 50 },
     shark: { width: 80, height: 60, points: 100 },
   };
-
+  const generateJoinCode = () => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let code = "";
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  };
+  
+  useEffect(() => {
+    const scoreRef = ref(database, "communalScore"); // points to our database node
+  
+    const unsubscribe = onValue(scoreRef, (snapshot) => {
+      const value = snapshot.val();
+      if (value !== null) setCommunalScore(value);
+    });
+  
+    return () => unsubscribe(); // stop listening when component unmounts
+  }, []);
   // Keyboard controls for boat movement
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -143,6 +168,13 @@ export const FishingGame = () => {
             if (caughtFish) {
               const points = caughtFish.isShark ? fishSizes.shark.points : fishSizes[caughtFish.size].points;
               setScore((s) => s + points);
+              // Update the communal score in Firebase
+              const scoreRef = ref(database, "communalScore");
+              get(scoreRef).then((snapshot) => {
+                const current = snapshot.val() || 0;   // read current communal score
+                set(scoreRef, current + points);       // add points to communal score
+              });
+
               // Remove caught fish and add new one
               setFish((prevFish) => {
                 const newFish = prevFish.filter((f) => f.id !== caughtFish.id);
@@ -231,9 +263,83 @@ export const FishingGame = () => {
     setCaughtFish(null);
 
   };
-
+  // THIS IS ALL WHAT'S VISIBLE ON THE SCREEN:
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-400 via-sky-300 to-sky-200 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      
+      {/* POP-UP AT THE START */}
+      {showJoinPopup && (
+  <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-50">
+    <div className="bg-blue-500 w-[85%] h-[85%] rounded-lg shadow-lg flex flex-col items-center justify-start p-8 gap-12">
+      <p className="text-white font-extrabold text-6xl mb-12">Math Catch</p>
+      
+      {/* Display host code if it exists */}
+      {hostCode && (
+        <>
+          <div className="text-white text-2xl font-bold">
+            Host Code: {hostCode}
+          </div>
+          <Button
+            className="text-2xl py-6 mt-4"
+            onClick={() => setShowJoinPopup(false)} // start the game
+          >
+            Start Game
+          </Button>
+        </>
+      )}
+
+      {/* Join Code Input */}
+      {showJoinInput ? (
+        <div className="flex flex-col gap-6 w-3/4 items-center">
+          <div className="flex gap-4 w-full items-center">
+            <label className="text-white text-xl font-semibold">Join Code:</label>
+            <input
+              type="text"
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value)}
+              className="flex-1 p-3 text-xl rounded"
+              placeholder="Enter code"
+            />
+          </div>
+          <Button
+            className="text-2xl py-6 w-full"
+            onClick={() => {
+              if (!joinCode) {
+                alert("Please enter a code!");
+                return;
+              }
+              setShowJoinPopup(false); // hide popup and start game
+            }}
+          >
+            Submit
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-8 w-3/4">
+          {/* Host Game Button */}
+          <Button
+            className="text-2xl py-6"
+            onClick={() => {
+              const code = generateJoinCode();     // generate code
+              setHostCode(code);                    // save code in state
+              setIsHosting(true);      // mark that the player is now hosting
+              const gameRef = ref(database, `games/${code}`);
+              set(gameRef, { communalScore: 0 });  // create Firebase node
+            }}
+          >
+            Host Game
+          </Button>
+
+
+          <Button className="text-2xl py-6" onClick={() => setShowJoinInput(true)}>
+            Join Game
+          </Button>
+        </div>
+      )}
+    </div>
+  </div>
+)}
+      
       {/* Sky Background with Clouds */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <Cloud className="absolute top-10 left-[10%] w-16 h-16 text-white/70 animate-pulse" style={{ animationDuration: "4s" }} />
@@ -261,14 +367,13 @@ export const FishingGame = () => {
       )}
       <Card className="p-6 mb-4 bg-white/90 backdrop-blur shadow-lg">
         <div className="flex items-center justify-between gap-8">
-          <div className="text-center">
-            <p className="text-sm font-medium text-muted-foreground">Score</p>
-            <p className="text-3xl font-bold text-primary">{score}</p>
-          </div>
+        <div className="text-center">
+          <p className="text-sm font-medium text-muted-foreground">Team Score</p>
+          <p className="text-3xl font-bold text-primary">{communalScore}</p>
+        </div>
+
+
           <div className="flex gap-2 flex-wrap">
-<<<<<<< HEAD
-    
-=======
             <Button onClick={() => setShowQuestion(true)}>
               Refill Bait
               <p className="text-sm text-muted-foreground">Bait left: {baitNo}</p>
@@ -299,7 +404,6 @@ export const FishingGame = () => {
                 →
               </Button>
             </div>
->>>>>>> 8941efa6548bd55be14b77c97bdeb80318c1ebe1
             <Button onClick={handleReset} variant="outline">
               Reset
             </Button>
