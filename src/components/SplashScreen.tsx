@@ -30,7 +30,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStart }) => {
     setHostCode(code);
     const gameRef = ref(database, `games/${code}`);
     set(gameRef, { communalScore: 0 });
-    setStarted(true);
+    //setStarted(true);
   };
   // when user clicks join button
   const handleJoin = () => {
@@ -43,42 +43,54 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStart }) => {
   if (started) return <Levels gameCode={hostCode || joinCode} onStart={onStart} />;
   
   // visuals
-  return (
-    <div className="w-screen h-screen flex flex-col items-center justify-center bg-blue-500 gap-6">
-      <h1 className="text-white text-9xl font-bold mb-12">Math Catch</h1>
+  // visuals
+return (
+  <div className="w-screen h-screen flex flex-col items-center justify-center bg-blue-500 gap-6">
+    <h1 className="text-white text-9xl font-bold mb-12">Math Catch</h1>
 
-      {showJoinInput ? (
-        <>
-          <input
-            type="text"
-            value={joinCode}
-            onChange={(e) => setJoinCode(e.target.value)}
-            placeholder="Enter code"
-            className="p-2 rounded text-black"
-          />
-          <Button onClick={handleJoin}>
-            Submit
-            </Button>
-        </>
-      ) : (
-        // host and join buttons
-        <div className="flex gap-10">
-          
-          <Button 
+    {showJoinInput ? (
+      <>
+        <input
+          type="text"
+          value={joinCode}
+          onChange={(e) => setJoinCode(e.target.value)}
+          placeholder="Enter code"
+          className="p-2 rounded text-black"
+        />
+        <Button onClick={handleJoin}>
+          Submit
+        </Button>
+      </>
+    ) : !hostCode ? (
+      // host and join buttons
+      <div className="flex gap-10">
+        <Button 
           className="px-20 py-10 bg-yellow-400 text-white text-3xl rounded-xl hover:bg-yellow-600"
           onClick={handleHost}>
-            Host Game
-            </Button>
-          
-          <Button 
+          Host Game
+        </Button>
+        <Button 
           className="px-20 py-10 bg-green-400 text-white text-3xl rounded-xl hover:bg-green-600"
           onClick={() => setShowJoinInput(true)}>
-            Join Game
-            </Button>
-        
-        </div>
-      )}
-    </div>
-  );
+          Join Game
+        </Button>
+      </div>
+    ) : (
+      // Display host code and start button
+      <div className="flex flex-col items-center gap-14">
+        <p className="text-white text-5xl">
+          Your Game Code: <span className="font-bold">{hostCode}</span>
+        </p>
+        <Button
+          className="px-20 py-8 bg-yellow-400 text-white text-2xl rounded-xl hover:bg-yellow-600"
+          onClick={() => setStarted(true)}
+        >
+          Start Game
+        </Button>
+      </div>
+    )}
+  </div>
+);
+
 };
 export default SplashScreen;
