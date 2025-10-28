@@ -14,6 +14,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStart }) => {
   const [showJoinInput, setShowJoinInput] = useState(false);
   const [joinCode, setJoinCode] = useState("");
   const [hostCode, setHostCode] = useState("");
+  const [started, setStarted] = useState(false);
 
   // generating a random code
   const generateJoinCode = () => {
@@ -29,7 +30,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStart }) => {
     setHostCode(code);
     const gameRef = ref(database, `games/${code}`);
     set(gameRef, { communalScore: 0 });
-    onStart();
+    setStarted(true);
   };
   // when user clicks join button
   const handleJoin = () => {
@@ -37,9 +38,10 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStart }) => {
       alert("Enter a code!");
       return;
     }
-    onStart();
+    setStarted(true);
   };
-
+  if (started) return <Levels gameCode={hostCode || joinCode} onStart={onStart} />;
+  
   // visuals
   return (
     <div className="w-screen h-screen flex flex-col items-center justify-center bg-blue-500 gap-6">

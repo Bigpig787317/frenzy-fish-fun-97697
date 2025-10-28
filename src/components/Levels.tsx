@@ -7,15 +7,16 @@ type Difficulty = "mild" | "medium" | "spicy";
 interface LevelsProps {
 
   onStart: () => void;
+  gameCode: string;
 
 }
 
-const Levels: React.FC<LevelsProps> = ({ onStart }) => {
+const Levels: React.FC<LevelsProps> = ({ onStart, gameCode }) => {
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | null>(null);
 
   // Once a difficulty is selected, start the game
   if (selectedDifficulty) {
-    return <FishingGame difficulty={selectedDifficulty} />;
+    return <FishingGame difficulty={selectedDifficulty} gameCode={gameCode}/>;
   }
 
   // choosing your level visuals

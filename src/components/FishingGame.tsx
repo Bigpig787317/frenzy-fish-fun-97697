@@ -32,9 +32,10 @@ interface Coral {
 }
 interface FishingGameProps {
   difficulty?: "mild" | "medium" | "spicy"; // make it optional
+  gameCode: string; // NEW
 }
 
-export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild" }) => {
+export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", gameCode }) => {
   const [score, setScore] = useState(0);
   const [baitNo, setBaitNo] = useState(5);
   const [showQuestion, setShowQuestion] = useState(false);
@@ -59,7 +60,7 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild" })
   };
   
   useEffect(() => {
-    const scoreRef = ref(database, "communalScore"); // points to our database node
+    const scoreRef = ref(database, `games/${gameCode}/communalScore`); // points to our database node
   
     const unsubscribe = onValue(scoreRef, (snapshot) => {
       const value = snapshot.val();
@@ -159,7 +160,7 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild" })
               const points = caughtFish.isShark ? fishSizes.shark.points : fishSizes[caughtFish.size].points;
               setScore((s) => s + points);
               // Update the communal score in Firebase
-              const scoreRef = ref(database, "communalScore");
+              const scoreRef = ref(database, `games/${gameCode}/communalScore`)
               get(scoreRef).then((snapshot) => {
                 const current = snapshot.val() || 0;   // read current communal score
                 set(scoreRef, current + points);       // add points to communal score
