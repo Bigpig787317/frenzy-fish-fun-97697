@@ -1,6 +1,7 @@
 // imports
-import { ref, onValue, set, get } from "firebase/database";
+import { ref, onValue } from "firebase/database";
 import { database } from "../firebase"; // import the database reference
+import { runTransaction } from "firebase/database";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
@@ -10,6 +11,7 @@ import seaweedGrass from "@/assets/seaweed_grass.svg";
 import seaweedGreenC from "@/assets/seaweed_green_c.svg";
 import seaweedPink from "@/assets/seaweed_pink.svg";
 import seaweedOrange from "@/assets/seaweed_orange.svg";type Difficulty = "mild" | "medium" | "spicy";
+
 
 type Screen = "splash" | "levels" | "game";
 
@@ -35,8 +37,9 @@ interface FishingGameProps {
   gameCode: string; // NEW
 }
 
+
 export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", gameCode }) => {
-  const [score, setScore] = useState(0);
+  const scoreRef = ref(database, `games/${gameCode}/communalScore`);
   const [baitNo, setBaitNo] = useState(5);
   const [showQuestion, setShowQuestion] = useState(false);
   const [currentAnswer, setCurrentAnswer] = useState("");
@@ -58,17 +61,24 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
     large: { width: 70, height: 50, points: 50 },
     shark: { width: 80, height: 60, points: 100 },
   };
-  
+  // Debug: check the gameCode for host/joiner
   useEffect(() => {
-    const scoreRef = ref(database, `games/${gameCode}/communalScore`); // points to our database node
-  
+    console.log("Listening to gameCode:", gameCode);
+  }, [gameCode]);
+
+  // Listen for communal score updates in Firebase
+  useEffect(() => {
+    if (!gameCode) return;
+
+    const scoreRef = ref(database, `games/${gameCode}/communalScore`);
     const unsubscribe = onValue(scoreRef, (snapshot) => {
       const value = snapshot.val();
-      if (value !== null) setCommunalScore(value);
+      if (value !== null) setCommunalScore(value); // use your state variable
     });
-  
-    return () => unsubscribe(); // stop listening when component unmounts
-  }, []);
+
+    return () => unsubscribe();
+  }, [gameCode]);
+
   
   // Keyboard controls for boat movement
   useEffect(() => {
@@ -158,12 +168,10 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
             setIsReeling(false);
             if (caughtFish) {
               const points = caughtFish.isShark ? fishSizes.shark.points : fishSizes[caughtFish.size].points;
-              setScore((s) => s + points);
-              // Update the communal score in Firebase
-              const scoreRef = ref(database, `games/${gameCode}/communalScore`)
-              get(scoreRef).then((snapshot) => {
-                const current = snapshot.val() || 0;   // read current communal score
-                set(scoreRef, current + points);       // add points to communal score
+              // Update the communal score safely for all players
+              const scoreRef = ref(database, `games/${gameCode}/communalScore`);
+              runTransaction(scoreRef, (current) => {
+                return (current || 0) + points;
               });
 
               // Remove caught fish and add new one
@@ -241,7 +249,6 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
   </Button>
 
   const handleReset = () => {
-    setScore(0);
     setHookY(0);
     setBoatX(50);
     setIsCasting(false);
@@ -317,9 +324,6 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
                 →
               </Button>
             </div>
-            <Button onClick={handleReset} variant="outline">
-              Reset
-            </Button>
           </div>
         </div>
       </Card>
