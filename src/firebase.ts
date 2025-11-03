@@ -4,6 +4,7 @@ import { getDatabase } from "firebase/database";
 const firebaseConfig = {
   apiKey: "AIzaSyDZeVGQPWX9KsDPblSite_MS1YSApowJ3o",
   authDomain: "math-catch.firebaseapp.com",
+  databaseURL: "https://math-catch-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "math-catch",
   storageBucket: "math-catch.firebasestorage.app",
   messagingSenderId: "522664043207",
