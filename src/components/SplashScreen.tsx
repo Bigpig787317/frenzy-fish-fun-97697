@@ -45,10 +45,10 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStart }) => {
       alert("Enter a code!");
       return;
     }
-  const joinerId = `JOINER-${Date.now()}`; // simple unique ID for joiner
-  const joinRef = ref(database, `games/${joinCode}/players/${joinerId}`);
-  set(joinRef, { joinedAt: Date.now() });
-  setStarted(true);
+    const joinerId = `JOINER-${Date.now()}`; // simple unique ID for joiner
+    const joinRef = ref(database, `games/${joinCode}/players/${joinerId}`);
+    set(joinRef, { joinedAt: Date.now() });
+    setStarted(true);
 
   };
    // NEW: listen for other players if you are the host
