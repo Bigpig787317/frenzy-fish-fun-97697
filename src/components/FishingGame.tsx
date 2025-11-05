@@ -7,21 +7,6 @@ import seaweedGrass from "@/assets/seaweed_grass.svg";
 import seaweedGreenC from "@/assets/seaweed_green_c.svg";
 import seaweedPink from "@/assets/seaweed_pink.svg";
 import seaweedOrange from "@/assets/seaweed_orange.svg";
-import fish_blue from "@/assets/fish_blue_outline.svg";
-import fish_brown from "@/assets/fish_brown_outline.svg";
-import fish_green from "@/assets/fish_green_outline.svg";
-import fish_pink from "@/assets/fish_pink_outline.svg";
-import fish_orange from "@/assets/fish_orange_outline.svg";
-import fish_red from "@/assets/fish_red_outline.svg";
-
-const fishies = [
-  fish_blue,
-  fish_brown,
-  fish_green,
-  fish_pink,
-  fish_orange,
-  fish_red
-];
 
 interface Fish {
   id: number;
@@ -31,7 +16,6 @@ interface Fish {
   speed: number;
   direction: 1 | -1;
   color: string;
-  image?: string;
   isShark?: boolean;
 }
 
@@ -64,6 +48,7 @@ export const FishingGame = () => {
     small: { width: 30, height: 20, points: 10 },
     medium: { width: 50, height: 35, points: 25 },
     large: { width: 70, height: 50, points: 50 },
+    shark: { width: 80, height: 60, points: 100 },
   };
 
   // Keyboard controls for boat movement
@@ -93,43 +78,47 @@ export const FishingGame = () => {
     setCoral(initialCoral);
   }, []);
 
-  // Initialize fish
+  // Initialize fish and sharks
   useEffect(() => {
-    const spawnInterval = setInterval(() => {
-      setFish(prev => {
-        if (prev.length > 10) return prev;
-
-        const newFish: Fish = {
-          id: Date.now(), // check why this change
-          x: Math.random() > 0.5 ? -5 : 105,
-          y: 20 + Math.random() * 70,
-          size: Math.random() > 0.6 ? "large" : Math.random() > 0.4 ? "medium" : "small",
-          speed: 0.5 + Math.random() * 0.3,
-          direction: Math.random() > 0.5 ? 1 : -1,
-          color: fishColors[Math.floor(Math.random() * fishColors.length)], // check if i need colour
-          image: fishies[Math.floor(Math.random() * fishies.length)], // randomly assigns fish image to a fish
-
-        };
-        return [...prev, newFish];
-      });
-    }, 3000);
-
-    return () => clearInterval(spawnInterval);
+    const initialFish: Fish[] = Array.from({ length: 10 }, (_, i) => {
+      const isShark = i < 2; // First 2 are sharks
+      return {
+        id: i,
+        x: Math.random() * 100,
+        y: 20 + Math.random() * 70,
+        size: isShark ? "large" : Math.random() > 0.6 ? "large" : Math.random() > 0.4 ? "medium" : "small",
+        speed: isShark ? 0.2 + Math.random() * 0.2 : 0.1 + Math.random() * 0.3,
+        direction: Math.random() > 0.5 ? 1 : -1,
+        color: isShark ? "hsl(200, 10%, 30%)" : fishColors[Math.floor(Math.random() * fishColors.length)],
+        isShark,
+      };
+    });
+    setFish(initialFish);
   }, []);
 
+  // Animate fish
   useEffect(() => {
     const interval = setInterval(() => {
-      setFish(prevFish =>
-          prevFish
-              .map(f => ({ ...f, x: f.x + f.speed * f.direction }))
-              .filter(f => f.x > -10 && f.x < 110)// remove if offscreen
+      setFish((prevFish) =>
+        prevFish.map((f) => {
+          let newX = f.x + f.speed * f.direction;
+          let newDirection = f.direction;
 
+          if (newX > 100) {
+            newX = 100;
+            newDirection = -1;
+          } else if (newX < 0) {
+            newX = 0;
+            newDirection = 1;
+          }
+
+          return { ...f, x: newX, direction: newDirection };
+        })
       );
-    }, 50); // come back and looka t chat here
+    }, 50);
 
     return () => clearInterval(interval);
   }, []);
-
 
   // Handle casting and reeling
   useEffect(() => {
@@ -152,7 +141,7 @@ export const FishingGame = () => {
           if (newY <= 0) {
             setIsReeling(false);
             if (caughtFish) {
-              const points = fishSizes[caughtFish.size].points;
+              const points = caughtFish.isShark ? fishSizes.shark.points : fishSizes[caughtFish.size].points;
               setScore((s) => s + points);
               // Remove caught fish and add new one
               setFish((prevFish) => {
@@ -368,7 +357,7 @@ export const FishingGame = () => {
                 left: `${boatX}%`,
                 top: `${hookY}%`,
                 color: caughtFish.color,
-                fontSize: `${fishSizes[caughtFish.size].width}px`,
+                fontSize: `${caughtFish.isShark ? fishSizes.shark.width : fishSizes[caughtFish.size].width}px`,
               }}
             >
               <FishIcon className="animate-bounce" />
@@ -378,7 +367,7 @@ export const FishingGame = () => {
           {/* Fish and Sharks */}
           {fish.map((f) => {
             if (caughtFish?.id === f.id) return null;
-            const size = fishSizes[f.size].width;
+            const size = f.isShark ? fishSizes.shark.width : fishSizes[f.size].width;
             return (
               <div
                 key={f.id}
@@ -387,18 +376,11 @@ export const FishingGame = () => {
                   left: `${f.x}%`,
                   top: `${f.y}%`,
                   color: f.color,
+                  transform: `scaleX(${f.direction})`,
+                  fontSize: `${size}px`,
                 }}
-                // puts the image ove the f object
               >
-                <img
-                    src={f.image}
-                    alt="fish"
-                    className="w-full h-full object-contain" // this makes tailwind css classes - for look purposes
-                    style={{
-                      transform: `scaleX(${f.direction})`,
-                      width: `${size}px`,
-                    }}
-                />
+                <FishIcon className={f.isShark ? "stroke-2" : ""} />
               </div>
             );
           })}
@@ -428,7 +410,7 @@ export const FishingGame = () => {
       </Card>
 
       <p className="mt-4 text-sm text-muted-foreground text-center max-w-md">
-        Use arrow keys or buttons to move the boat! Cast your line to catch fish (10-50 pts)!
+        Use arrow keys or buttons to move the boat! Cast your line to catch fish (10-50 pts) and sharks (100 pts)!
       </p>
     </div>
   );
