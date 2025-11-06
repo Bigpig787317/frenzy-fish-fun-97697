@@ -13,12 +13,12 @@ const Index: React.FC = () => {
 if (screen === "splash") 
   return <SplashScreen onStart={() => setScreen("levels")} />;
 if (screen === "levels") 
-  return <Levels onStart={() => setScreen("game")} gameCode="defaultGameCode" />;
+  return <Levels onStart={() => setScreen("game")} />;
 if (screen === "game") 
-  return <FishingGame gameCode="defaultGameCode" />;
+  return <FishingGame />;
 
   // Game screen (pass selected difficulty)
-  return <FishingGame difficulty={difficulty} gameCode="defaultGameCode" />;
+  return <FishingGame difficulty={difficulty} />;
 };
 
 export default Index;
