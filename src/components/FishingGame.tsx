@@ -1,7 +1,3 @@
-// imports
-import { ref, onValue } from "firebase/database";
-import { database } from "../firebase"; // import the database reference
-import { runTransaction } from "firebase/database";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
@@ -10,10 +6,7 @@ import seaweedGreenA from "@/assets/seaweed_green_a.svg";
 import seaweedGrass from "@/assets/seaweed_grass.svg";
 import seaweedGreenC from "@/assets/seaweed_green_c.svg";
 import seaweedPink from "@/assets/seaweed_pink.svg";
-import seaweedOrange from "@/assets/seaweed_orange.svg";type Difficulty = "mild" | "medium" | "spicy";
-
-
-type Screen = "splash" | "levels" | "game";
+import seaweedOrange from "@/assets/seaweed_orange.svg";
 
 interface Fish {
   id: number;
@@ -32,28 +25,24 @@ interface Coral {
   height: number;
   seaweedType: string;
 }
-interface FishingGameProps {
-  difficulty?: "mild" | "medium" | "spicy"; // make it optional
-  gameCode: string; // NEW
-}
 
-
-export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", gameCode }) => {
-  const scoreRef = ref(database, `games/${gameCode}/communalScore`);
+export const FishingGame = () => {
+  const [score, setScore] = useState(0);
   const [baitNo, setBaitNo] = useState(5);
+  // bait
+  // question asker
   const [showQuestion, setShowQuestion] = useState(false);
   const [currentAnswer, setCurrentAnswer] = useState("");
   const [hookY, setHookY] = useState(0);
-  const [boatX, setBoatX] = useState(50);
+  const [boatX, setBoatX] = useState(50); // Boat position (percentage)
   const [isCasting, setIsCasting] = useState(false);
   const [isReeling, setIsReeling] = useState(false);
   const [fish, setFish] = useState<Fish[]>([]);
   const [coral, setCoral] = useState<Coral[]>([]);
-  const seaweedTypes = [seaweedGreenA, seaweedGrass, seaweedGreenC, seaweedPink, seaweedOrange];
   const [caughtFish, setCaughtFish] = useState<Fish | null>(null);
   const gameAreaRef = useRef<HTMLDivElement>(null);
   const hookSpeed = 3;
-  const [communalScore, setCommunalScore] = useState(0);
+
   const fishColors = ["hsl(var(--fish-orange))", "hsl(var(--fish-yellow))", "hsl(var(--coral))"];
   const fishSizes = {
     small: { width: 30, height: 20, points: 10 },
@@ -61,25 +50,7 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
     large: { width: 70, height: 50, points: 50 },
     shark: { width: 80, height: 60, points: 100 },
   };
-  // Debug: check the gameCode for host/joiner
-  useEffect(() => {
-    console.log("Listening to gameCode:", gameCode);
-  }, [gameCode]);
 
-  // Listen for communal score updates in Firebase
-  useEffect(() => {
-    if (!gameCode) return;
-
-    const scoreRef = ref(database, `games/${gameCode}/communalScore`);
-    const unsubscribe = onValue(scoreRef, (snapshot) => {
-      const value = snapshot.val();
-      if (value !== null) setCommunalScore(value); // use your state variable
-    });
-
-    return () => unsubscribe();
-  }, [gameCode]);
-
-  
   // Keyboard controls for boat movement
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -93,6 +64,9 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  // Initialize seaweed
+  const seaweedTypes = [seaweedGreenA, seaweedGrass, seaweedGreenC, seaweedPink, seaweedOrange];
   
   useEffect(() => {
     const initialCoral: Coral[] = Array.from({ length: 12 }, (_, i) => ({
@@ -168,12 +142,7 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
             setIsReeling(false);
             if (caughtFish) {
               const points = caughtFish.isShark ? fishSizes.shark.points : fishSizes[caughtFish.size].points;
-              // Update the communal score safely for all players
-              const scoreRef = ref(database, `games/${gameCode}/communalScore`);
-              runTransaction(scoreRef, (current) => {
-                return (current || 0) + points;
-              });
-
+              setScore((s) => s + points);
               // Remove caught fish and add new one
               setFish((prevFish) => {
                 const newFish = prevFish.filter((f) => f.id !== caughtFish.id);
@@ -207,7 +176,7 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
     if (caughtFish) return;
 
     const hookX = boatX; // Hook follows boat position
-    const catchRadius = 5;
+    const catchRadius = 3;
 
     for (const f of fish) {
       const distance = Math.sqrt(Math.pow(hookX - f.x, 2) + Math.pow(currentHookY - f.y, 2));
@@ -229,12 +198,12 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
   };
   //test question
   const question = "what is 9+10?";
-  const correctAnswer = "19";
+  const correctAnswer = "21";
 
-  // when you type in a question answer
+  // coppied from chat didn't have enough time
   const handleSubmitAnswer = () => {
     if (currentAnswer === correctAnswer) {
-      setBaitNo(prev => prev + 1); // Reward: add 1 bait
+      setBaitNo(prev => prev + 2); // Reward: add 1 bait
       alert("Correct!");
     } else {
       alert("Try again!");
@@ -242,13 +211,19 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
     setCurrentAnswer("");      // Clear the input for next time
     setShowQuestion(false);    // Hide the question modal
   };
+// coppied from chat
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 
-  // refill bait button
   <Button onClick={() => setShowQuestion(true)}>
     Refill Bait
   </Button>
+      //setBaitNo(prev => prev + 1)}>
+    //Refill Bait (+1) come back
+  //</Button>
+
 
   const handleReset = () => {
+    setScore(0);
     setHookY(0);
     setBoatX(50);
     setIsCasting(false);
@@ -256,10 +231,9 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
     setCaughtFish(null);
 
   };
-  // visuals
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-400 via-sky-300 to-sky-200 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      
       {/* Sky Background with Clouds */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <Cloud className="absolute top-10 left-[10%] w-16 h-16 text-white/70 animate-pulse" style={{ animationDuration: "4s" }} />
@@ -287,16 +261,14 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
       )}
       <Card className="p-6 mb-4 bg-white/90 backdrop-blur shadow-lg">
         <div className="flex items-center justify-between gap-8">
-        <div className="text-center">
-          <p className="text-sm font-medium text-muted-foreground">Team Score</p>
-          <p className="text-3xl font-bold text-primary">{communalScore}</p>
-        </div>
-
-
+          <div className="text-center">
+            <p className="text-sm font-medium text-muted-foreground">Score</p>
+            <p className="text-3xl font-bold text-primary">{score}</p>
+          </div>
           <div className="flex gap-2 flex-wrap">
             <Button onClick={() => setShowQuestion(true)}>
               Refill Bait
-              <p className="text-sm text-muted-foreground">Bait: {baitNo}</p>
+              <p className="text-sm text-muted-foreground">Bait left: {baitNo}</p>
             </Button>
             <Button
                 onClick={handleCast}
@@ -324,6 +296,9 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
                 →
               </Button>
             </div>
+            <Button onClick={handleReset} variant="outline">
+              Reset
+            </Button>
           </div>
         </div>
       </Card>
@@ -435,10 +410,8 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
       </Card>
 
       <p className="mt-4 text-sm text-muted-foreground text-center max-w-md">
-        Use your arrow keys or buttons to move the boat! 
-        Cast your line to catch fish and earn points!
+        Use arrow keys or buttons to move the boat! Cast your line to catch fish (10-50 pts) and sharks (100 pts)!
       </p>
     </div>
   );
 };
-export default FishingGame;
