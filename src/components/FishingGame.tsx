@@ -37,12 +37,51 @@ interface FishingGameProps {
   gameCode: string; // NEW
 }
 
+const questions_mild = ["2 × 3 ="," 5 × 4 =", "10 × 7 =", "2 × 8 =", "5 × 6 =", "10 × 9 =", "5 × 2 =", "10 × 3 =", "2 × 12 ="];
+const answers_mild = ["6", "20", "70", "16", "30", "90", "10", "30", "24"];
+const questions_medium = [
+  "3 × 7 =",
+  "4 × 9 =",
+  "6 × 8 =",
+  "9 × 5 =",
+  "8 × 7 =",
+  "3 × 12 =",
+  "4 × 6 =",
+  "9 × 3 =",
+  "8 × 4 =",
+  "6 × 7 ="
+];
+const answers_medium = ["21", "36", "48", "45", "56", "36", "24", "27", "32", "42"];
+const questions_spicy = [
+  "7 × 9 =",
+  "12 × 8 =",
+  "11 × 6 =",
+  "A box has 9 rows of 8 apples. How many apples are there in total?",
+  "144 ÷ 12 =",
+  "7 × 8 =",
+  "10 × 12 =",
+  "A spider has 8 legs. How many legs do 6 spiders have?",
+  "9 × 11 =",
+  "96 ÷ 8 ="
+];
+const answers_spicy = ["63", "96", "66", "72", "12", "56", "120", "48", "99", "12"];
+
+
+
+// when you type in a question answer
+
+// const question = "what is 9+10?";
+// const correctAnswer = "19";
+
 
 export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", gameCode }) => {
   const scoreRef = ref(database, `games/${gameCode}/communalScore`);
+  const [showQuestion, setShowQuestionState] = useState(false);
   const [baitNo, setBaitNo] = useState(5);
-  const [showQuestion, setShowQuestion] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState("");
+  const [currentAnswerValue, setCurrentAnswerValue] = useState("");
   const [currentAnswer, setCurrentAnswer] = useState("");
+  // always says is correct fix
   const [hookY, setHookY] = useState(0);
   const [boatX, setBoatX] = useState(50);
   const [isCasting, setIsCasting] = useState(false);
@@ -61,10 +100,42 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
     large: { width: 70, height: 50, points: 50 },
     shark: { width: 80, height: 60, points: 100 },
   };
+
+  const setShowQuestion = (b: boolean) => {
+    setShowQuestionState(b);
+  };
+
+  function q_generator(){
+    const QNo = Math.floor(Math.random() * 10);
+    if (difficulty === "mild"){
+      setCurrentQuestion(questions_mild[QNo]);
+      setCurrentAnswerValue(answers_mild[QNo]);
+    } else if (difficulty === "medium") {
+      setCurrentQuestion(questions_medium[QNo]);
+      setCurrentAnswerValue(answers_medium[QNo]);
+    } else {
+      setCurrentQuestion(questions_spicy[QNo]);
+      setCurrentAnswerValue(answers_spicy[QNo]);
+    }
+    setShowQuestion(true);
+  };
+
   // Debug: check the gameCode for host/joiner
   useEffect(() => {
     console.log("Listening to gameCode:", gameCode);
   }, [gameCode]);
+  const handleSubmitAnswer = () => {
+    if (currentAnswer === currentAnswerValue) {
+      setBaitNo(prev => prev + 1); // Reward: add 1 bait
+      alert("Correct!");
+    } else {
+      alert("Try again!");
+    }
+    setCurrentAnswer("");      // Clear the input for next time
+    setShowQuestion(false);    // Hide the question modal
+  };
+
+// refill bait button
 
   // Listen for communal score updates in Firebase
   useEffect(() => {
@@ -228,25 +299,25 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
     }
   };
   //test question
-  const question = "what is 9+10?";
-  const correctAnswer = "19";
+ // const question = "what is 9+10?";
+ // const correctAnswer = "19";
 
-  // when you type in a question answer
-  const handleSubmitAnswer = () => {
-    if (currentAnswer === correctAnswer) {
-      setBaitNo(prev => prev + 1); // Reward: add 1 bait
-      alert("Correct!");
-    } else {
-      alert("Try again!");
-    }
-    setCurrentAnswer("");      // Clear the input for next time
-    setShowQuestion(false);    // Hide the question modal
-  };
-
-  // refill bait button
-  <Button onClick={() => setShowQuestion(true)}>
-    Refill Bait
-  </Button>
+  // // when you type in a question answer
+  // const handleSubmitAnswer = () => {
+  //   if (currentAnswer === correctAnswer) {
+  //     setBaitNo(prev => prev + 1); // Reward: add 1 bait
+  //     alert("Correct!");
+  //   } else {
+  //     alert("Try again!");
+  //   }
+  //   setCurrentAnswer("");      // Clear the input for next time
+  //   setShowQuestion(false);    // Hide the question modal
+  // };
+  //
+  // // refill bait button
+  // <Button onClick={() => setShowQuestion(true)}>
+  //   Refill Bait
+  // </Button>
 
   const handleReset = () => {
     setHookY(0);
@@ -271,7 +342,7 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
       {showQuestion && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-50">
             <div className="bg-white p-6 rounded shadow-lg flex flex-col gap-4">
-              <p>{question}</p>
+              <p>{currentQuestion}</p>
               <input
                   type="text"
                   value={currentAnswer}
@@ -294,7 +365,7 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
 
 
           <div className="flex gap-2 flex-wrap">
-            <Button onClick={() => setShowQuestion(true)}>
+            <Button onClick={q_generator}>
               Refill Bait
               <p className="text-sm text-muted-foreground">Bait: {baitNo}</p>
             </Button>
@@ -305,6 +376,9 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
             >
               <Anchor className="mr-2 h-4 w-4" />
               Cast Line
+            </Button>
+            <Button onClick={q_generator}>
+              Refill Bait
             </Button>
             <div className="flex gap-1">
               <Button
