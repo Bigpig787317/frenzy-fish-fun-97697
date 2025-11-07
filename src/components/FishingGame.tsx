@@ -362,12 +362,14 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
           <p className="text-sm font-medium text-muted-foreground">Team Score</p>
           <p className="text-3xl font-bold text-primary">{communalScore}</p>
         </div>
-
+        <div className="text-center">
+          <p className="text-sm font-medium text-muted-foreground">Bait</p>
+          <p className="text-3xl font-bold text-primary">{baitNo}</p>
+        </div>
 
           <div className="flex gap-2 flex-wrap">
             <Button onClick={q_generator}>
               Refill Bait
-              <p className="text-sm text-muted-foreground">Bait: {baitNo}</p>
             </Button>
             <Button
                 onClick={handleCast}
@@ -376,9 +378,6 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
             >
               <Anchor className="mr-2 h-4 w-4" />
               Cast Line
-            </Button>
-            <Button onClick={q_generator}>
-              Refill Bait
             </Button>
             <div className="flex gap-1">
               <Button
