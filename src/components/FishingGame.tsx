@@ -337,17 +337,6 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
   // visuals
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-400 via-sky-300 to-sky-200 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      {/* Timer in top-right corner */}
-      <div
-        className="absolute top-4 right-6 text-center text-4xl font-extrabold transition-all duration-200"
-        style={{
-          color: timeLeft <= 10 ? 'red' : 'white',
-          transform: timeLeft <= 10 ? `scale(${Math.sin(Date.now() / 400) * 0.2 + 1})` : 'scale(1)',
-        }}
-      >
-        <p className="text-sm font-medium">Time Left:</p>
-        {timeLeft}
-      </div>
       {/* Sky Background with Clouds */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <Cloud className="absolute top-10 left-[10%] w-16 h-16 text-white/70 animate-pulse" style={{ animationDuration: "4s" }} />
@@ -375,16 +364,15 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
       )}
       <Card className="p-6 mb-4 bg-white/90 backdrop-blur shadow-lg">
         <div className="flex items-center justify-between gap-8">
-        <div className="text-center">
-          <p className="text-sm font-medium text-muted-foreground">Team Score</p>
-          <p className="text-3xl font-bold text-primary">{communalScore}</p>
-        </div>
-        <div className="text-center">
-          <p className="text-sm font-medium text-muted-foreground">Bait</p>
-          <p className="text-3xl font-bold text-primary">{baitNo}</p>
-        </div>
-
-          <div className="flex gap-2 flex-wrap">
+          <div className="text-center">
+            <p className="text-sm font-medium text-muted-foreground">Team Score</p>
+            <p className="text-3xl font-bold text-primary">{communalScore}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-medium text-muted-foreground">Bait</p>
+            <p className="text-3xl font-bold text-primary">{baitNo}</p>
+          </div>
+          <div className="flex gap-4 flex-wrap items-center">
             <Button onClick={q_generator}>
               Refill Bait
             </Button>
@@ -413,6 +401,11 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
               >
                 →
               </Button>
+            </div>
+            {/* Time Left moved here */}
+            <div className="text-center ml-4">
+              <p className="text-sm font-medium text-muted-foreground">Time Left</p>
+              <p className="text-3xl font-bold text-primary">{timeLeft}</p>
             </div>
           </div>
         </div>
