@@ -101,6 +101,9 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
     shark: { width: 80, height: 60, points: 100 },
   };
 
+  // Game over state
+  const [gameOver, setGameOver] = useState(false);
+
   const setShowQuestion = (b: boolean) => {
     setShowQuestionState(b);
   };
@@ -135,14 +138,17 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
     setShowQuestion(false);    // Hide the question modal
   };
     
-  //Timer
-    useEffect(() => {
-      if (timeLeft <= 0) return; // stop at 0
-      const interval = setInterval(() => {
-        setTimeLeft(prev => prev - 1);
-      }, 1000);
-      return () => clearInterval(interval);
-    }, [timeLeft]);
+  //Timer and game over
+  useEffect(() => {
+    if (timeLeft <= 0) {
+      setGameOver(true);
+      return;
+    }
+    const interval = setInterval(() => {
+      setTimeLeft(prev => prev - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timeLeft]);
  
     // Listen for communal score updates in Firebase
   useEffect(() => {
@@ -337,6 +343,17 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
   // visuals
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-400 via-sky-300 to-sky-200 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Game Over Modal */}
+      {gameOver && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-50">
+          <div className="bg-white p-8 rounded-lg shadow-lg text-center w-80 font-sans">
+            <p className="text-4xl font-bold mb-4">Game Over!</p>
+            <p className="text-2xl mb-4">Your Score: {communalScore}</p>
+            <p className="text-lg mb-6">🎉 Congratulations! 🎉</p>
+            <Button onClick={() => window.location.reload()}>Play Again</Button>
+          </div>
+        </div>
+      )}
       {/* Sky Background with Clouds */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <Cloud className="absolute top-10 left-[10%] w-16 h-16 text-white/70 animate-pulse" style={{ animationDuration: "4s" }} />
