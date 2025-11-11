@@ -81,7 +81,7 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
   const [currentQuestion, setCurrentQuestion] = useState("");
   const [currentAnswerValue, setCurrentAnswerValue] = useState("");
   const [currentAnswer, setCurrentAnswer] = useState("");
-  // always says is correct fix
+  const [timeLeft, setTimeLeft] = useState(60);
   const [hookY, setHookY] = useState(0);
   const [boatX, setBoatX] = useState(50);
   const [isCasting, setIsCasting] = useState(false);
@@ -134,10 +134,17 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
     setCurrentAnswer("");      // Clear the input for next time
     setShowQuestion(false);    // Hide the question modal
   };
-
-// refill bait button
-
-  // Listen for communal score updates in Firebase
+    
+  //Timer
+    useEffect(() => {
+      if (timeLeft <= 0) return; // stop at 0
+      const interval = setInterval(() => {
+        setTimeLeft(prev => prev - 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    }, [timeLeft]);
+ 
+    // Listen for communal score updates in Firebase
   useEffect(() => {
     if (!gameCode) return;
 
@@ -330,7 +337,17 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
   // visuals
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-400 via-sky-300 to-sky-200 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      
+      {/* Timer in top-right corner */}
+      <div
+        className="absolute top-4 right-6 text-center text-4xl font-extrabold transition-all duration-200"
+        style={{
+          color: timeLeft <= 10 ? 'red' : 'white',
+          transform: timeLeft <= 10 ? `scale(${Math.sin(Date.now() / 400) * 0.2 + 1})` : 'scale(1)',
+        }}
+      >
+        <p className="text-sm font-medium">Time Left:</p>
+        {timeLeft}
+      </div>
       {/* Sky Background with Clouds */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <Cloud className="absolute top-10 left-[10%] w-16 h-16 text-white/70 animate-pulse" style={{ animationDuration: "4s" }} />
