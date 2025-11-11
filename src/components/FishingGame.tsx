@@ -346,21 +346,26 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
         <Cloud className="absolute top-8 left-[60%] w-20 h-20 text-white/55 animate-pulse" style={{ animationDuration: "5.5s" }} />
       </div>
       {showQuestion && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-50">
-            <div className="bg-white p-6 rounded shadow-lg flex flex-col gap-4">
-              <p>{currentQuestion}</p>
-              <input
-                  type="text"
-                  value={currentAnswer}
-                  onChange={(e) => setCurrentAnswer(e.target.value)}
-                  className="border p-1"
-              />
-              <div className="flex gap-2">
-                <Button onClick={handleSubmitAnswer}>Submit</Button>
-                <Button onClick={() => setShowQuestion(false)}>Cancel</Button>
-              </div>
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-50">
+          <div className="bg-white p-8 rounded-lg shadow-lg flex flex-col gap-6 items-center w-80 font-sans">
+            {/* Question */}
+            <p className="text-5xl font-semibold text-center">{currentQuestion}</p>
+
+            {/* Input */}
+            <input
+              type="text"
+              value={currentAnswer}
+              onChange={(e) => setCurrentAnswer(e.target.value)}
+              className="border p-2 w-full text-center text-lg rounded"
+            />
+
+            {/* Buttons: Cancel left, Submit right */}
+            <div className="flex justify-between w-full mt-2 gap-2">
+              <Button onClick={() => setShowQuestion(false)}>Cancel</Button>
+              <Button onClick={handleSubmitAnswer}>Submit</Button>
             </div>
           </div>
+        </div>
       )}
       <Card className="p-6 mb-4 bg-white/90 backdrop-blur shadow-lg">
         <div className="flex items-center justify-between gap-8">
