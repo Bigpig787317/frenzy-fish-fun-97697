@@ -95,7 +95,7 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
   const [currentQuestion, setCurrentQuestion] = useState("");
   const [currentAnswerValue, setCurrentAnswerValue] = useState("");
   const [currentAnswer, setCurrentAnswer] = useState("");
-  // always says is correct fix
+  const [timeLeft, setTimeLeft] = useState(60);
   const [hookY, setHookY] = useState(0);
   const [boatX, setBoatX] = useState(50);
   const [isCasting, setIsCasting] = useState(false);
@@ -148,10 +148,17 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
     setCurrentAnswer("");      // Clear the input for next time
     setShowQuestion(false);    // Hide the question modal
   };
-
-// refill bait button
-
-  // Listen for communal score updates in Firebase
+    
+  //Timer
+    useEffect(() => {
+      if (timeLeft <= 0) return; // stop at 0
+      const interval = setInterval(() => {
+        setTimeLeft(prev => prev - 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    }, [timeLeft]);
+ 
+    // Listen for communal score updates in Firebase
   useEffect(() => {
     if (!gameCode) return;
 
@@ -340,7 +347,6 @@ return () => clearInterval(interval);
   // visuals
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-400 via-sky-300 to-sky-200 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      
       {/* Sky Background with Clouds */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <Cloud className="absolute top-10 left-[10%] w-16 h-16 text-white/70 animate-pulse" style={{ animationDuration: "4s" }} />
@@ -350,34 +356,40 @@ return () => clearInterval(interval);
         <Cloud className="absolute top-8 left-[60%] w-20 h-20 text-white/55 animate-pulse" style={{ animationDuration: "5.5s" }} />
       </div>
       {showQuestion && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-50">
-            <div className="bg-white p-6 rounded shadow-lg flex flex-col gap-4">
-              <p>{currentQuestion}</p>
-              <input
-                  type="text"
-                  value={currentAnswer}
-                  onChange={(e) => setCurrentAnswer(e.target.value)}
-                  className="border p-1"
-              />
-              <div className="flex gap-2">
-                <Button onClick={handleSubmitAnswer}>Submit</Button>
-                <Button onClick={() => setShowQuestion(false)}>Cancel</Button>
-              </div>
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-50">
+          <div className="bg-white p-8 rounded-lg shadow-lg flex flex-col gap-6 items-center w-80 font-sans">
+            {/* Question */}
+            <p className="text-5xl font-semibold text-center">{currentQuestion}</p>
+
+            {/* Input */}
+            <input
+              type="text"
+              value={currentAnswer}
+              onChange={(e) => setCurrentAnswer(e.target.value)}
+              className="border p-2 w-full text-center text-lg rounded"
+            />
+
+            {/* Buttons: Cancel left, Submit right */}
+            <div className="flex justify-between w-full mt-2 gap-2">
+              <Button onClick={() => setShowQuestion(false)}>Cancel</Button>
+              <Button onClick={handleSubmitAnswer}>Submit</Button>
             </div>
           </div>
+        </div>
       )}
       <Card className="p-6 mb-4 bg-white/90 backdrop-blur shadow-lg">
         <div className="flex items-center justify-between gap-8">
-        <div className="text-center">
-          <p className="text-sm font-medium text-muted-foreground">Team Score</p>
-          <p className="text-3xl font-bold text-primary">{communalScore}</p>
-        </div>
-
-
-          <div className="flex gap-2 flex-wrap">
+          <div className="text-center">
+            <p className="text-sm font-medium text-muted-foreground">Team Score</p>
+            <p className="text-3xl font-bold text-primary">{communalScore}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-medium text-muted-foreground">Bait</p>
+            <p className="text-3xl font-bold text-primary">{baitNo}</p>
+          </div>
+          <div className="flex gap-4 flex-wrap items-center">
             <Button onClick={q_generator}>
               Refill Bait
-              <p className="text-sm text-muted-foreground">Bait: {baitNo}</p>
             </Button>
             <Button
                 onClick={handleCast}
@@ -386,9 +398,6 @@ return () => clearInterval(interval);
             >
               <Anchor className="mr-2 h-4 w-4" />
               Cast Line
-            </Button>
-            <Button onClick={q_generator}>
-              Refill Bait
             </Button>
             <div className="flex gap-1">
               <Button
@@ -407,6 +416,11 @@ return () => clearInterval(interval);
               >
                 →
               </Button>
+            </div>
+            {/* Time Left moved here */}
+            <div className="text-center ml-4">
+              <p className="text-sm font-medium text-muted-foreground">Time Left</p>
+              <p className="text-3xl font-bold text-primary">{timeLeft}</p>
             </div>
           </div>
         </div>
