@@ -11,10 +11,23 @@ import seaweedGrass from "@/assets/seaweed_grass.svg";
 import seaweedGreenC from "@/assets/seaweed_green_c.svg";
 import seaweedPink from "@/assets/seaweed_pink.svg";
 import seaweedOrange from "@/assets/seaweed_orange.svg";type Difficulty = "mild" | "medium" | "spicy";
-
+import fish_blue from "@/assets/fish_blue_outline.svg";
+import fish_brown from "@/assets/fish_brown_outline.svg";
+import fish_green from "@/assets/fish_green_outline.svg";
+import fish_pink from "@/assets/fish_pink_outline.svg";
+import fish_orange from "@/assets/fish_orange_outline.svg";
+import fish_red from "@/assets/fish_red_outline.svg";
 
 type Screen = "splash" | "levels" | "game";
 
+const fishies = [
+ fish_blue,
+fish_brown,
+ fish_green,
+fish_pink,
+fish_orange,
+fish_red
+];
 interface Fish {
   id: number;
   x: number;
@@ -23,7 +36,8 @@ interface Fish {
   speed: number;
   direction: 1 | -1;
   color: string;
-  isShark?: boolean;
+  image?: string;
+ // isShark?: boolean;
 }
 
 interface Coral {
@@ -98,7 +112,7 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
     small: { width: 30, height: 20, points: 10 },
     medium: { width: 50, height: 35, points: 25 },
     large: { width: 70, height: 50, points: 50 },
-    shark: { width: 80, height: 60, points: 100 },
+    //shark: { width: 80, height: 60, points: 100 },
   };
 
   // Game over state
@@ -190,45 +204,41 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
 
   // Initialize fish and sharks
   useEffect(() => {
-    const initialFish: Fish[] = Array.from({ length: 10 }, (_, i) => {
-      const isShark = i < 2; // First 2 are sharks
-      return {
-        id: i,
-        x: Math.random() * 100,
-        y: 20 + Math.random() * 70,
-        size: isShark ? "large" : Math.random() > 0.6 ? "large" : Math.random() > 0.4 ? "medium" : "small",
-        speed: isShark ? 0.2 + Math.random() * 0.2 : 0.1 + Math.random() * 0.3,
-        direction: Math.random() > 0.5 ? 1 : -1,
-        color: isShark ? "hsl(200, 10%, 30%)" : fishColors[Math.floor(Math.random() * fishColors.length)],
-        isShark,
-      };
-    });
-    setFish(initialFish);
-  }, []);
+       const spawnInterval = setInterval(() => {
+         setFish(prev => {
+          if (prev.length > 10) return prev;
 
-  // Animate fish
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setFish((prevFish) =>
-        prevFish.map((f) => {
-          let newX = f.x + f.speed * f.direction;
-          let newDirection = f.direction;
+          const newFish: Fish = {
+            id: Date.now(), // check why this change
+            x: Math.random() > 0.5 ? -5 : 105,
+            y: 20 + Math.random() * 70,
+            size: Math.random() > 0.6 ? "large" : Math.random() > 0.4 ? "medium" : "small",
+            speed: 0.3 + Math.random() * 0.4,
+            direction: Math.random() > 0.5 ? 1 : -1,
+            color: fishColors[Math.floor(Math.random() * fishColors.length)], // check if i need colour
+            image: fishies[Math.floor(Math.random() * fishies.length)], // randomly assigns fish image to a fish
 
-          if (newX > 100) {
-            newX = 100;
-            newDirection = -1;
-          } else if (newX < 0) {
-            newX = 0;
-            newDirection = 1;
-          }
+          };
+          return [...prev, newFish];
+         });
+      }, 2000);
 
-          return { ...f, x: newX, direction: newDirection };
-        })
-      );
-    }, 50);
+      return () => clearInterval(spawnInterval);
+    }, []);
 
-    return () => clearInterval(interval);
-  }, []);
+    useEffect(() => {
+      const interval = setInterval(() => {
+       setFish(prevFish =>
+            prevFish
+                .map(f => ({ ...f, x: f.x + f.speed * f.direction }))
+                .filter(f => f.x > -10 && f.x < 150)// remove if offscreen
+
+        );
+}, 50); // come back and looka t chat here
+return () => clearInterval(interval);
+}, []);
+
+
 
   // Handle casting and reeling
   useEffect(() => {
@@ -251,7 +261,7 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
           if (newY <= 0) {
             setIsReeling(false);
             if (caughtFish) {
-              const points = caughtFish.isShark ? fishSizes.shark.points : fishSizes[caughtFish.size].points;
+              const points = fishSizes[caughtFish.size].points;
               // Update the communal score safely for all players
               const scoreRef = ref(database, `games/${gameCode}/communalScore`);
               runTransaction(scoreRef, (current) => {
@@ -270,7 +280,7 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
                   speed: isNewShark ? 0.2 + Math.random() * 0.2 : 0.1 + Math.random() * 0.3,
                   direction: Math.random() > 0.5 ? 1 : -1,
                   color: isNewShark ? "hsl(200, 10%, 30%)" : fishColors[Math.floor(Math.random() * fishColors.length)],
-                  isShark: isNewShark,
+
                 };
                 return [...newFish, newFishItem];
               });
@@ -291,7 +301,7 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
     if (caughtFish) return;
 
     const hookX = boatX; // Hook follows boat position
-    const catchRadius = 5;
+    const catchRadius = 2;
 
     for (const f of fish) {
       const distance = Math.sqrt(Math.pow(hookX - f.x, 2) + Math.pow(currentHookY - f.y, 2));
@@ -487,7 +497,7 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
                 left: `${boatX}%`,
                 top: `${hookY}%`,
                 color: caughtFish.color,
-                fontSize: `${caughtFish.isShark ? fishSizes.shark.width : fishSizes[caughtFish.size].width}px`,
+                fontSize: `${fishSizes[caughtFish.size].width}px`,
               }}
             >
               <FishIcon className="animate-bounce" />
@@ -496,25 +506,31 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
 
           {/* Fish and Sharks */}
           {fish.map((f) => {
-            if (caughtFish?.id === f.id) return null;
-            const size = f.isShark ? fishSizes.shark.width : fishSizes[f.size].width;
-            return (
-              <div
-                key={f.id}
-                className="absolute transition-all duration-100"
-                style={{
-                  left: `${f.x}%`,
-                  top: `${f.y}%`,
-                  color: f.color,
-                  transform: `scaleX(${f.direction})`,
-                  fontSize: `${size}px`,
-                }}
-              >
-                <FishIcon className={f.isShark ? "stroke-2" : ""} />
-              </div>
-            );
-          })}
-
+               if (caughtFish?.id === f.id) return null;
+               const size =  fishSizes[f.size].width;
+                return (
+                    <div
+                        key={f.id}
+                        className="absolute transition-all duration-100"
+                        style={{
+                         left: `${f.x}%`,
+                          top: `${f.y}%`,
+                          color: f.color,
+                        }}
+                        // puts the image ove the f object
+                    >
+                      <img
+                          src={f.image}
+                          alt="fish"
+                          className="w-full h-full object-contain" // this makes tailwind css classes - for look purposes
+                          style={{
+                            transform: `scaleX(${f.direction})`,
+                            width: `${size}px`,
+                          }}
+                      />
+                    </div>
+                );
+              })}
           {/* Seaweed */}
           {coral.map((c) => (
             <div
