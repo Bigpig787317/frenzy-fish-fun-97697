@@ -356,11 +356,16 @@ return () => clearInterval(interval);
       {/* Game Over Modal */}
       {gameOver && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-50">
-          <div className="bg-white p-8 rounded-lg shadow-lg text-center w-80 font-sans">
-            <p className="text-4xl font-bold mb-4">Game Over!</p>
-            <p className="text-2xl mb-4">Your Score: {communalScore}</p>
-            <p className="text-lg mb-6">🎉 Congratulations! 🎉</p>
-            <Button onClick={() => window.location.reload()}>Play Again</Button>
+          <div className="bg-green-400 p-20 rounded-lg shadow-xl text-center w-[36rem] font-sans text-white">
+            <p className="text-7xl font-extrabold mb-7 leading-none">Game Over!</p>
+            <p className="text-4xl mb-6">Your Score: {communalScore}</p>
+            <p className="text-xl mb-8">🎉 Congratulations! 🎉</p>
+            <Button 
+              onClick={() => window.location.reload()} 
+              className="px-12 py-6 text-xl font-bold rounded-lg"
+            >
+              Play Again
+            </Button>
           </div>
         </div>
       )}
@@ -437,7 +442,7 @@ return () => clearInterval(interval);
             {/* Time Left moved here */}
             <div className="text-center ml-4">
               <p className="text-sm font-medium text-muted-foreground">Time Left</p>
-              <p className="text-3xl font-bold text-primary">{timeLeft}</p>
+              <p className={`text-3xl font-bold ${timeLeft <= 10 ? 'text-red-600' : 'text-primary'}`}>{timeLeft}</p>
             </div>
           </div>
         </div>
