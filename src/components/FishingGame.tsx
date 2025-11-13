@@ -95,7 +95,7 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
   const [currentQuestion, setCurrentQuestion] = useState("");
   const [currentAnswerValue, setCurrentAnswerValue] = useState("");
   const [currentAnswer, setCurrentAnswer] = useState("");
-  const [timeLeft, setTimeLeft] = useState(60);
+  const [timeLeft, setTimeLeft] = useState(90);
   const [hookY, setHookY] = useState(0);
   const [boatX, setBoatX] = useState(50);
   const [isCasting, setIsCasting] = useState(false);
