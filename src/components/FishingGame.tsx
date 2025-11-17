@@ -107,6 +107,7 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
   const gameAreaRef = useRef<HTMLDivElement>(null);
   const hookSpeed = 3;
   const [communalScore, setCommunalScore] = useState(0);
+  const [doublePointsMessage, setDoublePointsMessage] = useState("");
   const fishColors = ["hsl(var(--fish-orange))", "hsl(var(--fish-yellow))", "hsl(var(--coral))"];
   const fishSizes = {
     small: { width: 30, height: 20, points: 10 },
@@ -155,9 +156,17 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
   //Timer and game over
   useEffect(() => {
     if (timeLeft <= 0) {
+      setShowQuestion(false); // Hide any active question
       setGameOver(true);
       return;
     }
+    // Show double points message at 60 seconds
+    if (timeLeft === 60) {
+      setDoublePointsMessage("Double points for the next 20 seconds!");
+      // Hide it after 3 seconds
+      setTimeout(() => setDoublePointsMessage(""), 3000);
+    }
+
     const interval = setInterval(() => {
       setTimeLeft(prev => prev - 1);
     }, 1000);
@@ -261,8 +270,10 @@ return () => clearInterval(interval);
           if (newY <= 0) {
             setIsReeling(false);
             if (caughtFish) {
-              const points = fishSizes[caughtFish.size].points;
+              const basePoints = fishSizes[caughtFish.size].points;
+              const points = (timeLeft <= 60 && timeLeft > 40) ? basePoints * 2 : basePoints;
               // Update the communal score safely for all players
+        
               const scoreRef = ref(database, `games/${gameCode}/communalScore`);
               runTransaction(scoreRef, (current) => {
                 return (current || 0) + points;
@@ -353,6 +364,12 @@ return () => clearInterval(interval);
   // visuals
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-400 via-sky-300 to-sky-200 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Double Points Message at bottom of screen */}
+      {doublePointsMessage && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 px-6 py-3 bg-yellow-300 text-white font-bold text-xl rounded-lg shadow-lg z-[60] text-center">
+          {doublePointsMessage}
+        </div>
+      )}
       {/* Game Over Modal */}
       {gameOver && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-50">
@@ -386,8 +403,15 @@ return () => clearInterval(interval);
             {/* Input */}
             <input
               type="text"
-              value={currentAnswer}
-              onChange={(e) => setCurrentAnswer(e.target.value)}
+              value={currentAnswer} // or whatever state variable you’re using for the join code
+              onChange={(e) => {
+                // Keep only digits and limit to 4
+                const value = e.target.value.replace(/\D/g, '');
+                setCurrentAnswer(value.slice(0, 4)); // replace with your state setter
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSubmitAnswer(); // keep your existing Enter behavior
+              }}
               className="border p-2 w-full text-center text-lg rounded"
             />
 

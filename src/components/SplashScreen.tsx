@@ -25,10 +25,8 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStart }) => {
 
   // generating a random code
   const generateJoinCode = () => {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let code = "";
-    for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
-    return code;
+    // Generate a random 4-digit number between 1000 and 9999
+    return Math.floor(1000 + Math.random() * 9000).toString();
   };
 
   // when user clicks host button
