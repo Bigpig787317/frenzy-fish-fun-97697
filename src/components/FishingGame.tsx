@@ -51,34 +51,6 @@ interface FishingGameProps {
   gameCode: string; // NEW
 }
 
-const questions_mild = ["2 × 3 ="," 5 × 4 =", "10 × 7 =", "2 × 8 =", "5 × 6 =", "10 × 9 =", "5 × 2 =", "10 × 3 =", "2 × 12 ="];
-const answers_mild = ["6", "20", "70", "16", "30", "90", "10", "30", "24"];
-const questions_medium = [
-  "3 × 7 =",
-  "4 × 9 =",
-  "6 × 8 =",
-  "9 × 5 =",
-  "8 × 7 =",
-  "3 × 12 =",
-  "4 × 6 =",
-  "9 × 3 =",
-  "8 × 4 =",
-  "6 × 7 ="
-];
-const answers_medium = ["21", "36", "48", "45", "56", "36", "24", "27", "32", "42"];
-const questions_spicy = [
-  "7 × 9 =",
-  "12 × 8 =",
-  "11 × 6 =",
-  "A box has 9 rows of 8 apples. How many apples are there in total?",
-  "144 ÷ 12 =",
-  "7 × 8 =",
-  "10 × 12 =",
-  "A spider has 8 legs. How many legs do 6 spiders have?",
-  "9 × 11 =",
-  "96 ÷ 8 ="
-];
-const answers_spicy = ["63", "96", "66", "72", "12", "56", "120", "48", "99", "12"];
 
 
 
@@ -87,6 +59,18 @@ const answers_spicy = ["63", "96", "66", "72", "12", "56", "120", "48", "99", "1
 // const question = "what is 9+10?";
 // const correctAnswer = "19";
 
+async function loadCSV(path: string) {
+  const res = await fetch(path);
+  const text = await res.text();
+  return text
+    .trim()
+    .split("\n")
+    .slice(1)
+    .map((line) => {
+      const [prompt, answer] = line.split(",");
+      return { prompt, answer };
+    });
+}
 
 export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", gameCode }) => {
   const scoreRef = ref(database, `games/${gameCode}/communalScore`);
@@ -107,6 +91,7 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
   const gameAreaRef = useRef<HTMLDivElement>(null);
   const hookSpeed = 3;
   const [communalScore, setCommunalScore] = useState(0);
+  const [answerResult, setAnswerResult] = useState<"correct" | "incorrect" | null>(null);
   const [doublePointsMessage, setDoublePointsMessage] = useState("");
   const fishColors = ["hsl(var(--fish-orange))", "hsl(var(--fish-yellow))", "hsl(var(--coral))"];
   const fishSizes = {
@@ -123,18 +108,22 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
     setShowQuestionState(b);
   };
 
-  function q_generator(){
-    const QNo = Math.floor(Math.random() * 10);
-    if (difficulty === "mild"){
-      setCurrentQuestion(questions_mild[QNo]);
-      setCurrentAnswerValue(answers_mild[QNo]);
+  const q_generator = async () => {
+    let csvPath = "";
+
+    if (difficulty === "mild") {
+      csvPath = "/questions_mild.csv";
     } else if (difficulty === "medium") {
-      setCurrentQuestion(questions_medium[QNo]);
-      setCurrentAnswerValue(answers_medium[QNo]);
+      csvPath = "/questions_medium.csv";
     } else {
-      setCurrentQuestion(questions_spicy[QNo]);
-      setCurrentAnswerValue(answers_spicy[QNo]);
+      csvPath = "/questions_spicy.csv";
     }
+
+    const list = await loadCSV(csvPath);
+    const random = list[Math.floor(Math.random() * list.length)];
+
+    setCurrentQuestion(random.prompt);
+    setCurrentAnswerValue(random.answer);
     setShowQuestion(true);
   };
 
@@ -143,16 +132,25 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
     console.log("Listening to gameCode:", gameCode);
   }, [gameCode]);
   const handleSubmitAnswer = () => {
-    if (currentAnswer === currentAnswerValue) {
-      setBaitNo(prev => prev + 1); // Reward: add 1 bait
-      alert("Correct!");
-    } else {
-      alert("Try again!");
-    }
-    setCurrentAnswer("");      // Clear the input for next time
-    setShowQuestion(false);    // Hide the question modal
+    const answer = currentAnswer.trim();
+    const correctAnswer = currentAnswerValue; // capture the correct answer at submission
+
+    // Determine correctness
+    const isCorrect = answer === correctAnswer;
+    setAnswerResult(isCorrect ? "correct" : "incorrect");
+
+    // Clear input
+    setCurrentAnswer("");
+
+    // Lock the question for 1 second while showing feedback
+    const feedbackTimeout = setTimeout(() => {
+      q_generator(); // generate new question
+      setAnswerResult(null); // reset feedback
+    }, 1000);
+
+    // Optional: cleanup if modal closes early
+    return () => clearTimeout(feedbackTimeout);
   };
-    
   //Timer and game over
   useEffect(() => {
     if (timeLeft <= 0) {
@@ -395,34 +393,42 @@ return () => clearInterval(interval);
         <Cloud className="absolute top-8 left-[60%] w-20 h-20 text-white/55 animate-pulse" style={{ animationDuration: "5.5s" }} />
       </div>
       {showQuestion && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-50">
-          <div className="bg-white p-8 rounded-lg shadow-lg flex flex-col gap-6 items-center w-80 font-sans">
-            {/* Question */}
-            <p className="text-5xl font-semibold text-center">{currentQuestion}</p>
+  <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-50">
+    <div
+      className={`p-8 rounded-lg shadow-lg flex flex-col gap-6 items-center w-80 font-sans transition-colors duration-300
+        ${answerResult === "correct" ? "bg-green-400" : ""}
+        ${answerResult === "incorrect" ? "bg-pink-400" : "bg-white"}`}
+    >
+      {/* Question */}
+      <p className="text-5xl font-semibold text-center">{currentQuestion}</p>
 
-            {/* Input */}
-            <input
-              type="text"
-              value={currentAnswer} // or whatever state variable you’re using for the join code
-              onChange={(e) => {
-                // Keep only digits and limit to 4
-                const value = e.target.value.replace(/\D/g, '');
-                setCurrentAnswer(value.slice(0, 4)); // replace with your state setter
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleSubmitAnswer(); // keep your existing Enter behavior
-              }}
-              className="border p-2 w-full text-center text-lg rounded"
-            />
+      {/* Feedback */}
+      {answerResult === "correct" && <p className="text-xl font-bold text-white">Correct!</p>}
+      {answerResult === "incorrect" && <p className="text-xl font-bold text-white">Not Quite!</p>}
 
-            {/* Buttons: Cancel left, Submit right */}
-            <div className="flex justify-between w-full mt-2 gap-2">
-              <Button onClick={() => setShowQuestion(false)}>Cancel</Button>
-              <Button onClick={handleSubmitAnswer}>Submit</Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Input */}
+      <input
+        type="text"
+        value={currentAnswer} 
+        onChange={(e) => {
+          const value = e.target.value.replace(/\D/g, '');
+          setCurrentAnswer(value.slice(0, 4));
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") handleSubmitAnswer(); 
+        }}
+        className="border p-2 w-full text-center text-lg rounded"
+        disabled={answerResult !== null} // prevents typing while feedback shows
+      />
+
+      {/* Buttons: Cancel left, Submit right */}
+      <div className="flex justify-between w-full mt-2 gap-2">
+        <Button onClick={() => setShowQuestion(false)}>Cancel</Button>
+        <Button onClick={handleSubmitAnswer} disabled={answerResult !== null}>Submit</Button>
+      </div>
+    </div>
+  </div>
+)}
       <Card className="p-6 mb-4 bg-white/90 backdrop-blur shadow-lg">
         <div className="flex items-center justify-between gap-8">
           <div className="text-center">
