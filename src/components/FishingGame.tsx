@@ -209,29 +209,34 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
     setCoral(initialCoral);
   }, []);
 
-  // Initialize fish and sharks
+  // Initialize fish and sharks (spawn more fish at once, higher min speed, allow more on screen)
   useEffect(() => {
-       const spawnInterval = setInterval(() => {
-         setFish(prev => {
-          if (prev.length > 10) return prev;
-
+    const spawnInterval = setInterval(() => {
+      setFish(prev => {
+        // Allow more fish on screen by increasing the limit or removing the check
+        if (prev.length > 25) return prev;
+        // Spawn 2–3 fish at a time
+        const numToSpawn = 2 + Math.floor(Math.random() * 2); // 2 or 3
+        const newFishArray: Fish[] = [];
+        for (let i = 0; i < numToSpawn; i++) {
           const newFish: Fish = {
-            id: Date.now(), // check why this change
+            id: Date.now() + i + Math.floor(Math.random() * 10000),
             x: Math.random() > 0.5 ? -5 : 105,
             y: 20 + Math.random() * 70,
             size: Math.random() > 0.6 ? "large" : Math.random() > 0.4 ? "medium" : "small",
-            speed: 0.3 + Math.random() * 0.4,
+            speed: 0.2 + Math.random() * 0.5, // minimum 0.2, max 0.7
             direction: Math.random() > 0.5 ? 1 : -1,
-            color: fishColors[Math.floor(Math.random() * fishColors.length)], // check if i need colour
-            image: fishies[Math.floor(Math.random() * fishies.length)], // randomly assigns fish image to a fish
-
+            color: fishColors[Math.floor(Math.random() * fishColors.length)],
+            image: fishies[Math.floor(Math.random() * fishies.length)],
           };
-          return [...prev, newFish];
-         });
-      }, 2000);
+          newFishArray.push(newFish);
+        }
+        return [...prev, ...newFishArray];
+      });
+    }, 2000);
 
-      return () => clearInterval(spawnInterval);
-    }, []);
+    return () => clearInterval(spawnInterval);
+  }, []);
 
     useEffect(() => {
       const interval = setInterval(() => {
@@ -247,84 +252,126 @@ return () => clearInterval(interval);
 
 
 
-  // Handle casting and reeling
+  const [caughtFishHover, setCaughtFishHover] = useState(false);
+
   useEffect(() => {
-    if (!isCasting && !isReeling) return;
+    if (!isCasting && !isReeling && !caughtFishHover) return;
+
+    const minHookY = 3; // hook will stop 3% from the top instead of 0%
+    const gameHeight = gameAreaRef.current ? gameAreaRef.current.clientHeight : 600;
 
     const interval = setInterval(() => {
-      setHookY((prev) => {
+      setHookY(prev => {
+        let newY = prev;
+
+        // Handle casting down
         if (isCasting) {
-          const newY = prev + hookSpeed;
-          if (newY >= 100) {
+          newY = prev + hookSpeed;
+
+          if (isCasting && newY >= 100) {
+            newY = 100;
             setIsCasting(false);
-            setIsReeling(true);
-            return 100;
-          }
-          // Check for fish collision while casting
-          checkFishCollision(newY);
-          return newY;
-        } else if (isReeling) {
-          const newY = prev - hookSpeed;
-          if (newY <= 0) {
-            setIsReeling(false);
+            // Start hover if fish caught
             if (caughtFish) {
-              const basePoints = fishSizes[caughtFish.size].points;
-              const points = (timeLeft <= 60 && timeLeft > 40) ? basePoints * 2 : basePoints;
-              // Update the communal score safely for all players
-        
-              const scoreRef = ref(database, `games/${gameCode}/communalScore`);
-              runTransaction(scoreRef, (current) => {
-                return (current || 0) + points;
-              });
-
-              // Remove caught fish and add new one
-              setFish((prevFish) => {
-                const newFish = prevFish.filter((f) => f.id !== caughtFish.id);
-                const isNewShark = Math.random() > 0.8; // 20% chance for shark
-                const newFishItem: Fish = {
-                  id: Date.now(),
-                  x: Math.random() * 100,
-                  y: 20 + Math.random() * 70,
-                  size: isNewShark ? "large" : Math.random() > 0.6 ? "large" : Math.random() > 0.4 ? "medium" : "small",
-                  speed: isNewShark ? 0.2 + Math.random() * 0.2 : 0.1 + Math.random() * 0.3,
-                  direction: Math.random() > 0.5 ? 1 : -1,
-                  color: isNewShark ? "hsl(200, 10%, 30%)" : fishColors[Math.floor(Math.random() * fishColors.length)],
-
-                };
-                return [...newFish, newFishItem];
-              });
-              setCaughtFish(null);
+              setCaughtFishHover(true);
+              const freezeY = newY;
+              setCaughtFish(prev => prev ? { ...prev, y: freezeY } : prev);
+              setTimeout(() => {
+                setCaughtFishHover(false);
+                setIsReeling(true);
+              }, 100);
+            } else {
+              setIsReeling(true);
             }
-            return 0;
           }
-          return newY;
         }
-        return prev;
+
+        // Handle reeling up (only if not hovering)
+        if (isReeling && !caughtFishHover) {
+          newY = prev - hookSpeed;
+        }
+
+        // Convert hook and fish to pixel positions for collision
+        const hookPixelY = (newY / 100) * gameHeight;
+
+        setFish(prevFish => {
+          let caught: Fish | null = null;
+          const remaining = prevFish.filter(f => {
+            const fishPixelY = (f.y / 100) * gameHeight;
+            const distance = Math.sqrt(Math.pow(boatX - f.x, 2) + Math.pow(hookPixelY - fishPixelY, 2));
+            if (isCasting && distance < 15) {
+              caught = f;
+              return false;
+            }
+            return true;
+          });
+
+          if (caught) {
+            setCaughtFish({ ...caught, x: boatX, y: newY, image: caught.image });
+            setIsCasting(false);
+            setCaughtFishHover(true);
+            const freezeY = newY;
+            setCaughtFish(prev => prev ? { ...prev, y: freezeY } : prev);
+            setTimeout(() => {
+              setCaughtFishHover(false);
+              setIsReeling(true);
+            }, 1000);
+          }
+
+          return remaining;
+        });
+
+        // Move caught fish with hook if already reeling
+        if (caughtFish && !caughtFishHover) {
+          setCaughtFish(prev => (prev ? { ...prev, y: newY, x: boatX } : prev));
+        }
+
+        // Hover-based reeling/casting boundaries
+        if (isCasting && newY >= 100) {
+          newY = 100;
+          setIsCasting(false);
+          setIsReeling(true);
+        }
+        if (isReeling && newY <= minHookY) {
+          newY = minHookY;
+          setIsReeling(false);
+
+          if (caughtFish) {
+            const basePoints = fishSizes[caughtFish.size].points;
+            const points = timeLeft <= 60 && timeLeft > 40 ? basePoints * 2 : basePoints;
+
+            const scoreRef = ref(database, `games/${gameCode}/communalScore`);
+            runTransaction(scoreRef, (current) => (current || 0) + points);
+
+            setFish(prevFish => {
+              const isNewShark = Math.random() > 0.8;
+              const newFishItem: Fish = {
+                id: Date.now(),
+                x: Math.random() * 100,
+                y: 20 + Math.random() * 70,
+                size: isNewShark ? "large" : Math.random() > 0.6 ? "large" : Math.random() > 0.4 ? "medium" : "small",
+                speed: 0.2 + Math.random() * 0.5,
+                direction: Math.random() > 0.5 ? 1 : -1,
+                color: isNewShark ? "hsl(200, 10%, 30%)" : fishColors[Math.floor(Math.random() * fishColors.length)],
+                image: fishies[Math.floor(Math.random() * fishies.length)],
+              };
+              return [...prevFish, newFishItem];
+            });
+
+            setCaughtFish(null);
+          }
+        }
+
+        return newY;
       });
     }, 30);
 
     return () => clearInterval(interval);
-  }, [isCasting, isReeling, caughtFish]);
-
-  const checkFishCollision = (currentHookY: number) => {
-    if (caughtFish) return;
-
-    const hookX = boatX; // Hook follows boat position
-    const catchRadius = 2;
-
-    for (const f of fish) {
-      const distance = Math.sqrt(Math.pow(hookX - f.x, 2) + Math.pow(currentHookY - f.y, 2));
-      if (distance < catchRadius) {
-        setCaughtFish(f);
-        setIsCasting(false);
-        setIsReeling(true);
-        break;
-      }
-    }
-  };
+  }, [isCasting, isReeling, caughtFish, boatX, timeLeft, gameCode, caughtFishHover]);
 
   const handleCast = () => {
-    if (!isCasting && !isReeling && hookY === 0 && baitNo > 0) {
+    const minHookY = 3; // match the same value from useEffect
+    if (!isCasting && !isReeling && hookY <= minHookY && baitNo > 0) {
       setIsCasting(true);
       // Bait number minus one every time we fish
       setBaitNo((prev) => prev - 1);
@@ -491,7 +538,7 @@ return () => clearInterval(interval);
 
           {/* Boat */}
           <div 
-            className="absolute top-0 -translate-x-1/2 -translate-y-2 z-20 transition-all duration-200"
+            className="absolute top-0 -translate-x-1/2 -translate-y-2 z-20 transition-all duration-100"
             style={{ left: `${boatX}%` }}
           >
             <div className="w-20 h-8 bg-gradient-to-b from-amber-700 to-amber-900 rounded-b-2xl shadow-lg">
@@ -535,13 +582,21 @@ return () => clearInterval(interval);
                 fontSize: `${fishSizes[caughtFish.size].width}px`,
               }}
             >
-              <FishIcon className="animate-bounce" />
+              <img
+                src={caughtFish.image}
+                alt="caught fish"
+                className="animate-bounce w-full h-full object-contain"
+                style={{
+                  transform: `scaleX(${caughtFish.direction})`,
+                  width: `${fishSizes[caughtFish.size].width}px`,
+                }}
+              />
             </div>
           )}
 
           {/* Fish and Sharks */}
           {fish.map((f) => {
-               if (caughtFish?.id === f.id) return null;
+               if (caughtFish?.id === f.id && isReeling && !caughtFishHover) return null;
                const size =  fishSizes[f.size].width;
                 return (
                     <div
