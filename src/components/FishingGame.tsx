@@ -67,10 +67,21 @@ async function loadCSV(path: string) {
     .split("\n")
     .slice(1)
     .map((line) => {
-      const [prompt, answer] = line.split(",");
+      const [promptRaw, answerRaw] = line.split(",");
+      const prompt = (promptRaw || "").replace(/\r/g, "").trim();
+      const answer = (answerRaw || "").replace(/\r/g, "").trim();
       return { prompt, answer };
     });
 }
+
+// Make sure answers from CSV and user input are comparable
+const normalizeAnswer = (value: string | number): string => {
+  return String(value)
+    .trim()
+    .replace(/\r/g, "")   // remove carriage returns
+    .replace(/"/g, "")    // remove stray quotes
+    .replace(/\s+/g, ""); // remove all spaces
+};
 
 export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", gameCode }) => {
   const scoreRef = ref(database, `games/${gameCode}/communalScore`);
@@ -132,24 +143,38 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
     console.log("Listening to gameCode:", gameCode);
   }, [gameCode]);
   const handleSubmitAnswer = () => {
-    const answer = currentAnswer.trim();
-    const correctAnswer = currentAnswerValue; // capture the correct answer at submission
+    // Raw values
+    const userAnswerRaw = currentAnswer;
+    const correctAnswerRaw = currentAnswerValue;
 
-    // Determine correctness
-    const isCorrect = answer === correctAnswer;
+    // Normalized versions
+    const normalizedUser = normalizeAnswer(userAnswerRaw);
+    const normalizedCorrect = normalizeAnswer(correctAnswerRaw);
+
+    // Numeric comparison first
+    const userNum = Number(normalizedUser);
+    const correctNum = Number(normalizedCorrect);
+
+    let isCorrect = false;
+
+    if (!Number.isNaN(userNum) && !Number.isNaN(correctNum)) {
+      isCorrect = userNum === correctNum;
+    } else {
+      isCorrect = normalizedUser.toLowerCase() === normalizedCorrect.toLowerCase();
+    }
+
     setAnswerResult(isCorrect ? "correct" : "incorrect");
 
-    // Clear input
+    if (isCorrect) {
+      setBaitNo((prev) => prev + 1);
+    }
+
     setCurrentAnswer("");
 
-    // Lock the question for 1 second while showing feedback
     const feedbackTimeout = setTimeout(() => {
-      q_generator(); // generate new question
-      setAnswerResult(null); // reset feedback
+      q_generator();
+      setAnswerResult(null);
     }, 1000);
-
-    // Optional: cleanup if modal closes early
-    return () => clearTimeout(feedbackTimeout);
   };
   //Timer and game over
   useEffect(() => {
@@ -443,8 +468,7 @@ return () => clearInterval(interval);
   <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-50">
     <div
       className={`p-8 rounded-lg shadow-lg flex flex-col gap-6 items-center w-80 font-sans transition-colors duration-300
-        ${answerResult === "correct" ? "bg-green-400" : ""}
-        ${answerResult === "incorrect" ? "bg-pink-400" : "bg-white"}`}
+        ${answerResult === "correct" ? "bg-green-400" : answerResult === "incorrect" ? "bg-pink-400" : "bg-white"}`}
     >
       {/* Question */}
       <p className="text-5xl font-semibold text-center">{currentQuestion}</p>
