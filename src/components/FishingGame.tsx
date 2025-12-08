@@ -108,7 +108,7 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
   const fishSizes = {
     small: { width: 30, height: 20, points: 10 },
     medium: { width: 50, height: 35, points: 25 },
-    large: { width: 70, height: 50, points: 50 },
+    large: { width: 70, height: 50, points: 40 },
     //shark: { width: 80, height: 60, points: 100 },
   };
 
@@ -251,7 +251,7 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
             direction: number > 0.5 ? 1 : -1,
             y: 18 + Math.random() * 70,
             size: Math.random() > 0.6 ? "large" : Math.random() > 0.4 ? "medium" : "small",
-            speed: 0.3 + Math.random() * 0.4, // minimum 0.2, max 0.7
+            speed: 0.3 + Math.random() * 0.5, // minimum 0.2, max 0.7
             color: fishColors[Math.floor(Math.random() * fishColors.length)],
             image: fishies[Math.floor(Math.random() * fishies.length)],
           };
