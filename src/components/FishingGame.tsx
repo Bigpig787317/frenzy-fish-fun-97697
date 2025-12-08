@@ -100,7 +100,7 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
   const seaweedTypes = [seaweedGreenA, seaweedGrass, seaweedGreenC, seaweedPink, seaweedOrange];
   const [caughtFish, setCaughtFish] = useState<Fish | null>(null);
   const gameAreaRef = useRef<HTMLDivElement>(null);
-  const hookSpeed = 3;
+  const hookSpeed = 2;
   const [communalScore, setCommunalScore] = useState(0);
   const [answerResult, setAnswerResult] = useState<"correct" | "incorrect" | null>(null);
   const [doublePointsMessage, setDoublePointsMessage] = useState("");
@@ -239,18 +239,19 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
     const spawnInterval = setInterval(() => {
       setFish(prev => {
         // Allow more fish on screen by increasing the limit or removing the check
-        if (prev.length > 25) return prev;
+        if (prev.length > 3) return prev;
         // Spawn 2–3 fish at a time
-        const numToSpawn = 2 + Math.floor(Math.random() * 2); // 2 or 3
+        const numToSpawn = 1 + Math.floor(Math.random() * 2); // 2 or 3
         const newFishArray: Fish[] = [];
         for (let i = 0; i < numToSpawn; i++) {
+          const number = Math.random()
           const newFish: Fish = {
             id: Date.now() + i + Math.floor(Math.random() * 10000),
-            x: Math.random() > 0.5 ? -5 : 105,
-            y: 20 + Math.random() * 70,
+            x: number > 0.5 ? -5 : 105,
+            direction: number > 0.5 ? 1 : -1,
+            y: 18 + Math.random() * 70,
             size: Math.random() > 0.6 ? "large" : Math.random() > 0.4 ? "medium" : "small",
-            speed: 0.2 + Math.random() * 0.5, // minimum 0.2, max 0.7
-            direction: Math.random() > 0.5 ? 1 : -1,
+            speed: 0.3 + Math.random() * 0.4, // minimum 0.2, max 0.7
             color: fishColors[Math.floor(Math.random() * fishColors.length)],
             image: fishies[Math.floor(Math.random() * fishies.length)],
           };
@@ -258,7 +259,7 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
         }
         return [...prev, ...newFishArray];
       });
-    }, 2000);
+    }, 1500);
 
     return () => clearInterval(spawnInterval);
   }, []);
@@ -268,10 +269,10 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
        setFish(prevFish =>
             prevFish
                 .map(f => ({ ...f, x: f.x + f.speed * f.direction }))
-                .filter(f => f.x > -10 && f.x < 150)// remove if offscreen
+                .filter(f => f.x > -20 && f.x < 150)// remove if offscreen
 
         );
-}, 50); // come back and looka t chat here
+}, 60); // come back and looka t chat here
 return () => clearInterval(interval);
 }, []);
 
@@ -324,7 +325,7 @@ return () => clearInterval(interval);
           const remaining = prevFish.filter(f => {
             const fishPixelY = (f.y / 100) * gameHeight;
             const distance = Math.sqrt(Math.pow(boatX - f.x, 2) + Math.pow(hookPixelY - fishPixelY, 2));
-            if (isCasting && distance < 15) {
+            if (isCasting && distance < 8) {
               caught = f;
               return false;
             }
