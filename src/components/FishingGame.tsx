@@ -1,5 +1,5 @@
 // imports
-import { ref, onValue } from "firebase/database";
+import { ref, onValue, set} from "firebase/database";
 import { database } from "../firebase"; // import the database reference
 import { runTransaction } from "firebase/database";
 import { useState, useEffect, useRef } from "react";
@@ -142,6 +142,12 @@ export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", g
   useEffect(() => {
     console.log("Listening to gameCode:", gameCode);
   }, [gameCode]);
+  // Reset communal score whenever a new game starts
+useEffect(() => {
+  if (!gameCode) return;
+  const scoreRef = ref(database, `games/${gameCode}/communalScore`);
+  set(scoreRef, 0);
+}, [gameCode]);
   const handleSubmitAnswer = () => {
     // Raw values
     const userAnswerRaw = currentAnswer;
