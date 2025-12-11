@@ -1,4 +1,3 @@
-
 // imports
 import React, { useState, useEffect } from "react";
 import { FishingGame } from "./FishingGame";
@@ -85,6 +84,12 @@ return (
         <Button onClick={handleJoin}>
           Submit
         </Button>
+        <Button
+          onClick={() => setShowJoinInput(false)}
+          className="fixed bottom-4 bg-blue-200 text-black font-bold px-4 py-2 rounded shadow text-sm hover:bg-blue-300"
+        >
+          Back
+        </Button>
       </>
     ) : !hostCode ? (
       // host and join buttons
@@ -118,6 +123,12 @@ return (
           onClick={() => setStarted(true)}
         >
           Start Game
+        </Button>
+        <Button
+          onClick={() => setHostCode("")}
+          className="fixed bottom-4 bg-blue-200 text-black font-bold px-4 py-2 rounded shadow text-sm hover:bg-blue-300"
+        >
+          Back
         </Button>
       </div>
     )}

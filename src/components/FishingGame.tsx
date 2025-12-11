@@ -49,6 +49,7 @@ interface Coral {
 interface FishingGameProps {
   difficulty?: "mild" | "medium" | "spicy"; // make it optional
   gameCode: string; // NEW
+  onBack: () => void; // callback for back button
 }
 
 
@@ -83,7 +84,7 @@ const normalizeAnswer = (value: string | number): string => {
     .replace(/\s+/g, ""); // remove all spaces
 };
 
-export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", gameCode }) => {
+export const FishingGame: React.FC<FishingGameProps> = ({ difficulty = "mild", gameCode, onBack }) => {
   const scoreRef = ref(database, `games/${gameCode}/communalScore`);
   const [showQuestion, setShowQuestionState] = useState(false);
   const [baitNo, setBaitNo] = useState(5);
@@ -439,8 +440,19 @@ return () => clearInterval(interval);
 
   };
   // visuals
+  // Add global style for throb animation
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-400 via-sky-300 to-sky-200 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+    <>
+      <style>
+      {`
+      @keyframes throb {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.25); }
+        100% { transform: scale(1); }
+      }
+      `}
+      </style>
+      <div className="min-h-screen bg-gradient-to-b from-sky-400 via-sky-300 to-sky-200 flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Double Points Message at bottom of screen */}
       {doublePointsMessage && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 px-6 py-3 bg-yellow-300 text-white font-bold text-xl rounded-lg shadow-lg z-[60] text-center">
@@ -515,7 +527,19 @@ return () => clearInterval(interval);
           </div>
           <div className="text-center">
             <p className="text-sm font-medium text-muted-foreground">Bait</p>
-            <p className="text-3xl font-bold text-primary">{baitNo}</p>
+            <p
+              className={
+                "text-3xl font-bold " +
+                (baitNo === 0 ? "" : "text-primary")
+              }
+              style={
+                baitNo === 0
+                  ? { color: 'rgb(220 38 38)', animation: 'throb 1s infinite ease-in-out' }
+                  : {}
+              }
+            >
+              {baitNo}
+            </p>
           </div>
           <div className="flex gap-4 flex-wrap items-center">
             <Button onClick={q_generator}>
@@ -681,6 +705,7 @@ return () => clearInterval(interval);
         Cast your line to catch fish and earn points!
       </p>
     </div>
+    </>
   );
 };
 export default FishingGame;
